@@ -179,8 +179,7 @@ export function Sidebar() {
                   />
                   <span className="min-w-0 flex-1">
                     <span
-                      className="block truncate text-meta font-medium"
-                      dir="auto"
+                      className="bidi block truncate text-meta font-medium"
                     >
                       {p.name}
                     </span>
@@ -222,7 +221,7 @@ export function Sidebar() {
                         seed={album.title}
                         className="h-8 w-[42px]"
                       />
-                      <span dir="auto" className="min-w-0 truncate text-meta">
+                      <span className="bidi min-w-0 truncate text-meta">
                         {album.title}
                       </span>
                     </button>

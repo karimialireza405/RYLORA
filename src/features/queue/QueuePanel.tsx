@@ -112,12 +112,11 @@ export function QueuePanel({ embedded = false }: { embedded?: boolean }) {
               />
               <div className="min-w-0 flex-1">
                 <p
-                  className="truncate text-body font-semibold text-blue-soft"
-                  dir="auto"
+                  className="bidi truncate text-body font-semibold text-blue-soft"
                 >
                   {current.title}
                 </p>
-                <p className="truncate text-meta text-ink-3">
+                <p className="bidi truncate text-meta text-ink-3">
                   {current.artist}
                 </p>
               </div>
@@ -244,8 +243,7 @@ function QueueRow({
         />
         <span className="min-w-0 flex-1">
           <span
-            className="block truncate text-body font-medium text-ink"
-            dir="auto"
+            className="bidi block truncate text-body font-medium text-ink"
           >
             {title}
           </span>

@@ -54,7 +54,7 @@ export function AlbumPage({ id }: { id: number }) {
         art={<VinylCover fullBleed hash={album.artwork} seed={album.title} artist={album.artist} title={album.title} accent={album.accent} out={isCurrent} spinning={isCurrent && playing} style={{ height: "232px", width: "calc(232px * 1.3)" }} alt={`${album.title} cover`} />}
         meta={
           <>
-            <button type="button" onClick={() => navigate({ name: "artist", id: album.artistId })} className="font-semibold text-ink hover:underline">
+            <button type="button" onClick={() => navigate({ name: "artist", id: album.artistId })} className="bidi font-semibold text-ink hover:underline">
               {album.artist}
             </button>
             {album.year && (

@@ -196,6 +196,14 @@
 }
 
 @layer utilities {
+  /* User metadata (titles, artists, albums, lyrics): word order follows the text's own
+     language, while alignment follows the interface direction. A Persian title in an
+     English layout reads right-to-left yet stays aligned with its column. */
+  .bidi {
+    unicode-bidi: plaintext;
+    text-align: match-parent;
+  }
+
   /* Light is concentrated on headings and selected content, not tiny metadata. */
   .glow {
     text-shadow:

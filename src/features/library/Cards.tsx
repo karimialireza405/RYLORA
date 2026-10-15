@@ -20,7 +20,7 @@ import { navigate } from "@/stores/navigation";
 import { player } from "@/stores/player";
 import type { Album, Artist, Playlist, Track } from "@/types/domain";
 import { cn } from "@/utils/cn";
-import { formatLongDuration, isRtl, plural } from "@/utils/format";
+import { formatLongDuration, joinMeta, plural } from "@/utils/format";
 import { compareAlbumOrder } from "@/utils/tracks";
 import { playlistSubmenu } from "./trackMenu";
 
@@ -115,7 +115,6 @@ export const AlbumCard = memo(function AlbumCard({
   album: Album;
   subtitle?: string;
 }) {
-  const rtl = isRtl(album.title);
   return (
     <ContextMenuArea entries={() => albumMenu(album)}>
       <div className="group relative min-w-0 rounded-sm">
@@ -139,19 +138,15 @@ export const AlbumCard = memo(function AlbumCard({
           onClick={() => navigate({ name: "album", id: album.id })}
           className="mt-3 block w-full rounded-xs text-left after:absolute after:inset-0 after:content-['']"
           aria-label={`${album.title} by ${album.artist}`}
-          title={`${album.title} · ${album.artist}`}
+          title={joinMeta([album.title, album.artist])}
         >
           <span
-            dir={rtl ? "rtl" : undefined}
-            className={cn(
-              "block truncate text-body font-semibold text-ink",
-              rtl && "text-left",
-            )}
+            className="bidi block truncate text-body font-semibold text-ink"
           >
             {album.title}
           </span>
           <span className="mt-0.5 block truncate text-meta text-ink-3">
-            {subtitle ?? [album.artist, album.year].filter(Boolean).join(" · ")}
+            {subtitle ?? joinMeta([album.artist, album.year])}
           </span>
         </button>
       </div>
@@ -180,8 +175,7 @@ export const ArtistCard = memo(function ArtistCard({
         className="mt-3 block w-full rounded-xs after:absolute after:inset-0 after:content-['']"
       >
         <span
-          className="block truncate text-body font-semibold text-ink"
-          dir="auto"
+          className="bidi block truncate text-body font-semibold text-ink"
         >
           {artist.name}
         </span>
@@ -237,8 +231,7 @@ export const PlaylistCard = memo(function PlaylistCard({
         className="mt-3 block w-full rounded-xs text-left after:absolute after:inset-0 after:content-['']"
       >
         <span
-          className="block truncate text-body font-semibold text-ink"
-          dir="auto"
+          className="bidi block truncate text-body font-semibold text-ink"
         >
           {playlist.name}
         </span>

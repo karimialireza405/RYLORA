@@ -156,8 +156,7 @@ export function ListeningPanel() {
               className="w-full"
             />
             <h3
-              dir="auto"
-              className="mt-5 selectable text-heading font-bold [overflow-wrap:anywhere]"
+              className="bidi mt-5 selectable text-heading font-bold [overflow-wrap:anywhere]"
             >
               {track.title}
             </h3>
@@ -175,8 +174,7 @@ export function ListeningPanel() {
                 <div key={label}>
                   <dt className="text-caption text-ink-3">{label}</dt>
                   <dd
-                    dir="auto"
-                    className="selectable mt-1 break-words text-ink"
+                    className="bidi selectable mt-1 break-words text-ink"
                   >
                     {value ?? "Not specified"}
                   </dd>
@@ -224,16 +222,14 @@ export function ListeningPanel() {
             <div className="mt-2 flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3
-                  dir="auto"
-                  className="selectable text-heading font-bold leading-tight [overflow-wrap:anywhere]"
+                  className="bidi selectable text-heading font-bold leading-tight [overflow-wrap:anywhere]"
                 >
                   {track.title}
                 </h3>
                 <button
                   type="button"
-                  dir="auto"
                   title={track.artist}
-                  className="mt-1.5 max-w-full truncate text-body text-ink-3 hover:text-ink hover:underline"
+                  className="bidi mt-1.5 max-w-full truncate text-body text-ink-3 hover:text-ink hover:underline"
                   onClick={() =>
                     navigate({ name: "artist", id: track.artistId })
                   }
@@ -269,9 +265,8 @@ export function ListeningPanel() {
             </div>
             <button
               type="button"
-              dir="auto"
               title={track.album}
-              className="mt-3 max-w-full truncate text-meta text-ink-3 underline hover:text-ink"
+              className="bidi mt-3 max-w-full truncate text-meta text-ink-3 underline hover:text-ink"
               onClick={() => navigate({ name: "album", id: track.albumId })}
             >
               {track.album}
@@ -301,15 +296,13 @@ export function ListeningPanel() {
                       />
                       <span className="min-w-0 flex-1">
                         <span
-                          dir="auto"
                           title={t.title}
-                          className="block truncate text-body font-medium"
+                          className="bidi block truncate text-body font-medium"
                         >
                           {t.title}
                         </span>
                         <span
-                          dir="auto"
-                          className="block truncate text-caption text-ink-3"
+                          className="bidi block truncate text-caption text-ink-3"
                         >
                           {t.artist}
                         </span>

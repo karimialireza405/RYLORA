@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLongDuration, formatRelativeDate, formatTime, isRtl, plural } from "./format";
+import { formatLongDuration, formatRelativeDate, formatTime, isRtl, joinMeta, plural } from "./format";
 
 describe("formatTime", () => {
   it("formats minutes and hours", () => {
@@ -36,6 +36,13 @@ describe("formatRelativeDate", () => {
   it("uses friendly words for recent dates", () => {
     expect(formatRelativeDate(now - 3_600_000, now)).toBe("Today");
     expect(formatRelativeDate(now - 86_400_000, now)).toBe("Yesterday");
+  });
+});
+
+describe("joinMeta", () => {
+  it("isolates each part and drops empty ones", () => {
+    expect(joinMeta(["سایه‌ها", 2021, null, ""])).toBe("⁨سایه‌ها⁩ · ⁨2021⁩");
+    expect(joinMeta([])).toBe("");
   });
 });
 

@@ -13,7 +13,6 @@ import { navigate, useRoute } from "@/stores/navigation";
 import { usePlayer } from "@/stores/player";
 import { useUi } from "@/stores/ui";
 import { cn } from "@/utils/cn";
-import { isRtl } from "@/utils/format";
 
 /** Persistent transport bar. Lives outside page routing so it never unmounts. */
 export function PlaybackBar() {
@@ -69,16 +68,15 @@ export function PlaybackBar() {
               <button
                 type="button"
                 onClick={() => navigate({ name: "album", id: track.albumId })}
-                dir={isRtl(track.title) ? "rtl" : undefined}
                 title={track.title}
-                className="block max-w-full truncate text-left text-body font-semibold text-ink hover:underline"
+                className="bidi block max-w-full truncate text-left text-body font-semibold text-ink hover:underline"
               >
                 {track.title}
               </button>
               <button
                 type="button"
                 onClick={() => navigate({ name: "artist", id: track.artistId })}
-                className="block max-w-full truncate text-left text-meta text-ink-3 hover:text-ink-2 hover:underline"
+                className="bidi block max-w-full truncate text-left text-meta text-ink-3 hover:text-ink-2 hover:underline"
               >
                 {track.artist}
               </button>

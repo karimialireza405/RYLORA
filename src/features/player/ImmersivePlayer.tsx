@@ -11,7 +11,6 @@ import { useLibrary } from "@/stores/library";
 import { usePlayer } from "@/stores/player";
 import { prefEnabled, useUi } from "@/stores/ui";
 import { cn } from "@/utils/cn";
-import { isRtl } from "@/utils/format";
 import { ProgressBar, TransportControls, VolumeControl } from "./Controls";
 import { AmbientWash } from "./NowPlayingPage";
 
@@ -173,13 +172,12 @@ export function ImmersivePlayer() {
             }}
           />
           <h1
-            dir={isRtl(track.title) ? "rtl" : undefined}
-            className="glow-room mt-[4vh] line-clamp-2 max-w-[80vw] text-center text-balance font-display text-[clamp(28px,4.4vh,56px)] leading-tight font-light glow tracking-[-0.01em]"
+            className="bidi glow-room mt-[4vh] line-clamp-2 max-w-[80vw] text-center text-balance font-display text-[clamp(28px,4.4vh,56px)] leading-tight font-light glow tracking-[-0.01em]"
           >
             {track.title}
           </h1>
           <p className="mt-2 max-w-[70vw] truncate text-center text-[clamp(15px,2vh,20px)] text-ink-2">
-            {track.artist} <span className="text-ink-4">·</span> {track.album}
+            <bdi>{track.artist}</bdi> <span className="text-ink-4">·</span> <bdi>{track.album}</bdi>
           </p>
         </motion.div>
 

@@ -11,9 +11,8 @@ import { useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { player } from "@/stores/player";
 import { useUi } from "@/stores/ui";
-import { cn } from "@/utils/cn";
-import { isRtl } from "@/utils/format";
 import { searchLibrary, type SearchResults } from "@/utils/tracks";
+import { joinMeta } from "@/utils/format";
 
 export function SearchPage() {
   const query = useUi((s) => s.searchQuery);
@@ -122,7 +121,7 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
       case "album":
         return {
           title: top.item.title,
-          subtitle: `Album · ${top.item.artist}`,
+          subtitle: joinMeta(["Album", top.item.artist]),
           hash: top.item.artwork,
           seed: top.item.title,
           open: () => navigate({ name: "album", id: top.item.id }),
@@ -131,7 +130,7 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
       case "track":
         return {
           title: top.item.title,
-          subtitle: `Song · ${top.item.artist}`,
+          subtitle: joinMeta(["Song", top.item.artist]),
           hash: top.item.artwork,
           seed: top.item.album,
           open: () => navigate({ name: "album", id: top.item.albumId }),
@@ -155,7 +154,7 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
         />
       )}
       <button type="button" onClick={open} className="mt-5 block w-full text-left after:absolute after:inset-0 after:content-['']">
-        <span dir={isRtl(title) ? "rtl" : undefined} className={cn("glow-room block truncate font-display text-heading font-light glow tracking-[-0.01em]", isRtl(title) && "text-left")}>
+        <span className="bidi glow-room block truncate font-display text-heading font-light glow tracking-[-0.01em]">
           {title}
         </span>
         <span className="mt-1 block text-meta text-ink-3">{subtitle}</span>

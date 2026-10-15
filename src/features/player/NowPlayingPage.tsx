@@ -26,7 +26,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { VinylCover } from "@/components/ui/VinylCover";
 import { LibraryCover } from "@/components/ui/LibraryCover";
 import { cn } from "@/utils/cn";
-import { formatTime, isRtl } from "@/utils/format";
+import { formatTime } from "@/utils/format";
 import { ProgressBar, TransportControls, VolumeControl } from "./Controls";
 
 export function NowPlayingPage() {
@@ -63,7 +63,6 @@ export function NowPlayingPage() {
   }
 
   const accent = track.accent ?? "#e8ebf0";
-  const rtl = isRtl(track.title);
 
   return (
     <div className="relative min-h-full overflow-hidden">
@@ -120,11 +119,9 @@ export function NowPlayingPage() {
                 Now playing
               </p>
               <h1
-                dir={rtl ? "rtl" : undefined}
-                className={cn(
+                className={cn("bidi",
                   "glow-room mt-2 line-clamp-2 font-display font-light glow tracking-[-0.01em] text-ink text-balance",
                   track.title.length > 24 ? "text-display" : "text-hero",
-                  rtl && "text-left",
                 )}
               >
                 {track.title}
@@ -144,7 +141,7 @@ export function NowPlayingPage() {
                 <button
                   type="button"
                   onClick={() => navigate({ name: "album", id: track.albumId })}
-                  className="hover:text-ink-2 hover:underline"
+                  className="bidi hover:text-ink-2 hover:underline"
                 >
                   {track.album}
                 </button>
@@ -294,8 +291,8 @@ function NextUpLine() {
         className="h-8 w-[42px] shrink-0"
       />
       <span className="caps text-[10px] text-ink-4 uppercase">Next up</span>
-      <span className="min-w-0 truncate text-meta text-ink-2" dir="auto">
-        {track.title} <span className="text-ink-4">·</span> {track.artist}
+      <span className="min-w-0 truncate text-meta text-ink-2">
+        <bdi>{track.title}</bdi> <span className="text-ink-4">·</span> <bdi>{track.artist}</bdi>
       </span>
     </button>
   );
@@ -349,12 +346,11 @@ function UpNext() {
                 />
                 <span className="min-w-0 flex-1">
                   <span
-                    className="block truncate text-body font-medium text-ink"
-                    dir="auto"
+                    className="bidi block truncate text-body font-medium text-ink"
                   >
                     {track.title}
                   </span>
-                  <span className="block truncate text-meta text-ink-3">
+                  <span className="bidi block truncate text-meta text-ink-3">
                     {track.artist}
                   </span>
                 </span>
@@ -396,8 +392,7 @@ function LyricsPanel({ track }: { track: Track }) {
         <p className="text-meta text-ink-3">Reading tags…</p>
       ) : state.text ? (
         <p
-          dir="auto"
-          className="selectable min-h-0 flex-1 overflow-y-auto pr-2 text-lead leading-8 whitespace-pre-line text-ink-2"
+          className="bidi selectable min-h-0 flex-1 overflow-y-auto pr-2 text-lead leading-8 whitespace-pre-line text-ink-2"
         >
           {state.text}
         </p>

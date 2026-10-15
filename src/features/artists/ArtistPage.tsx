@@ -11,7 +11,7 @@ import { playFrom, TrackTable } from "@/features/library/TrackTable";
 import { useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
-import { plural } from "@/utils/format";
+import { joinMeta, plural } from "@/utils/format";
 import { compareAlbumOrder } from "@/utils/tracks";
 
 export function ArtistPage({ id }: { id: number }) {
@@ -103,7 +103,7 @@ export function ArtistPage({ id }: { id: number }) {
           <Shelf title="Albums" className="mt-0 mb-12">
             <CardGrid>
               {artistAlbums.map((a) => (
-                <AlbumCard key={a.id} album={a} subtitle={[a.year, plural(a.trackCount, "song")].filter(Boolean).join(" · ")} />
+                <AlbumCard key={a.id} album={a} subtitle={joinMeta([a.year, plural(a.trackCount, "song")])} />
               ))}
             </CardGrid>
           </Shelf>

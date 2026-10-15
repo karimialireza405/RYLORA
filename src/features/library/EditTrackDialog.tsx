@@ -117,8 +117,7 @@ function EditForm({ track }: { track: Track }) {
               </Button>
               {artworkPath && (
                 <p
-                  dir="auto"
-                  className="mt-2 truncate text-caption text-ink-3"
+                  className="bidi mt-2 truncate text-caption text-ink-3"
                   title={artworkPath}
                 >
                   {artworkPath.split(/[\\/]/).at(-1)}

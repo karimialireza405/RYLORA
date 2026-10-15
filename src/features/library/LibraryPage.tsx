@@ -329,15 +329,13 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                       className="w-full"
                     />
                     <span
-                      dir="auto"
                       title={track.title}
-                      className="mt-3 block truncate text-body font-semibold"
+                      className="bidi mt-3 block truncate text-body font-semibold"
                     >
                       {track.title}
                     </span>
                     <span
-                      dir="auto"
-                      className="block truncate text-meta text-ink-3"
+                      className="bidi block truncate text-meta text-ink-3"
                     >
                       {track.artist}
                     </span>
@@ -395,15 +393,13 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                       />
                       <span className="min-w-0 flex-1">
                         <span
-                          dir="auto"
                           title={a.title}
-                          className="block truncate text-body font-semibold"
+                          className="bidi block truncate text-body font-semibold"
                         >
                           {a.title}
                         </span>
                         <span
-                          dir="auto"
-                          className="block truncate text-meta text-ink-3"
+                          className="bidi block truncate text-meta text-ink-3"
                         >
                           {a.artist}
                         </span>

@@ -130,11 +130,11 @@ function ContinueRecord({ track, hasHistory }: { track: Track; hasHistory: boole
           <p className="text-overline font-medium tracking-[0.12em] text-ink-3 uppercase">
             {active && playing ? "Now playing" : hasHistory ? "Continue listening" : "From your library"}
           </p>
-          <h2 dir="auto" title={track.title} className="home-continue-title font-display line-clamp-2 text-display text-ink">
+          <h2 title={track.title} className="bidi home-continue-title font-display line-clamp-2 text-display text-ink">
             {track.title}
           </h2>
-          <p dir="auto" className="truncate text-left text-lead text-ink-2">{track.artist}</p>
-          <p dir="auto" className="mt-1 truncate text-left text-meta text-ink-3">{track.album}</p>
+          <p className="bidi truncate text-left text-lead text-ink-2">{track.artist}</p>
+          <p className="bidi mt-1 truncate text-left text-meta text-ink-3">{track.album}</p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button variant="primary" icon={active && playing ? Pause : Play} onClick={play}>
               {active && playing ? "Pause" : hasHistory ? "Resume listening" : "Play record"}

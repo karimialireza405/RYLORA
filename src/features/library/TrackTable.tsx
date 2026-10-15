@@ -36,7 +36,7 @@ import { toast } from "@/stores/toasts";
 import { setPreference, useUi } from "@/stores/ui";
 import type { Track } from "@/types/domain";
 import { cn } from "@/utils/cn";
-import { formatRelativeDate, formatTime, isRtl } from "@/utils/format";
+import { formatRelativeDate, formatTime } from "@/utils/format";
 import type { SortDirection, TrackSortKey } from "@/utils/tracks";
 import { buildTrackMenu } from "./trackMenu";
 
@@ -450,7 +450,6 @@ const TrackRow = memo(function TrackRow({
   dragHandle,
 }: RowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const rtl = isRtl(track.title);
   const number =
     variant === "album" ? (track.trackNumber ?? index + 1) : index + 1;
 
@@ -531,11 +530,9 @@ const TrackRow = memo(function TrackRow({
           )}
           <div className="min-w-0">
             <p
-              dir={rtl ? "rtl" : undefined}
               className={cn(
-                "truncate font-medium",
+                "bidi truncate font-medium",
                 playing ? "text-blue-soft" : "text-ink",
-                rtl && "text-left",
               )}
             >
               {track.title}
@@ -548,7 +545,7 @@ const TrackRow = memo(function TrackRow({
                   <button
                     type="button"
                     tabIndex={-1}
-                    className="hover:text-ink hover:underline"
+                    className="bidi hover:text-ink hover:underline"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate({ name: "artist", id: track.artistId });
@@ -567,7 +564,7 @@ const TrackRow = memo(function TrackRow({
             <button
               type="button"
               tabIndex={-1}
-              className="max-w-full truncate hover:text-ink hover:underline"
+              className="bidi max-w-full truncate hover:text-ink hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate({ name: "album", id: track.albumId });

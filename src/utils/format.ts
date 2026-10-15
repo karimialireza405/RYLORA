@@ -47,6 +47,22 @@ export function greeting(date = new Date()): string {
   return "Good evening";
 }
 
+/**
+ * Wrap text in Unicode first-strong isolates so its direction is resolved on its own.
+ * Without this, "سایه‌ها · 2021" in a left-to-right line is displayed as "2021 · سایه‌ها".
+ */
+export function isolate(text: string | number): string {
+  return `⁨${text}⁩`;
+}
+
+/** Join metadata parts ("Artist · 2021") with each part isolated; empty parts are dropped. */
+export function joinMeta(parts: (string | number | null | undefined | false)[]): string {
+  return parts
+    .filter((p): p is string | number => p !== null && p !== undefined && p !== false && p !== "")
+    .map(isolate)
+    .join(" · ");
+}
+
 /** True when the string's first strong character is right-to-left (Persian, Arabic, Hebrew). */
 export function isRtl(text: string): boolean {
   const match = text.match(/[A-Za-zÀ-ɏ֐-ࣿיִ-﷿ﹰ-﻿]/);

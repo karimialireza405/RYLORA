@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/utils/cn";
-import { isRtl } from "@/utils/format";
 
 /**
  * Header for albums, artists and playlists: artwork-led, lit by the artwork's
@@ -25,7 +24,6 @@ export function CollectionHero({
   onTitleClick?: () => void;
 }) {
   const tint = accent ?? "#e8ebf0";
-  const rtl = isRtl(title);
   const size = title.length > 28 ? "text-display" : "text-hero";
   return (
     <div className="relative">
@@ -42,11 +40,11 @@ export function CollectionHero({
           <p className="caps text-[10px] text-ink-2 uppercase">{overline}</p>
           {onTitleClick ? (
             <button type="button" onClick={onTitleClick} className="mt-2 block max-w-full rounded-xs text-left" title="Rename">
-              <TitleText title={title} size={size} rtl={rtl} />
+              <TitleText title={title} size={size} />
             </button>
           ) : (
             <div className="mt-2">
-              <TitleText title={title} size={size} rtl={rtl} />
+              <TitleText title={title} size={size} />
             </div>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-ink-2">{meta}</div>
@@ -57,11 +55,10 @@ export function CollectionHero({
   );
 }
 
-function TitleText({ title, size, rtl }: { title: string; size: string; rtl: boolean }) {
+function TitleText({ title, size }: { title: string; size: string }) {
   return (
     <h1
-      dir={rtl ? "rtl" : undefined}
-      className={cn("glow glow-room line-clamp-2 font-display font-light tracking-[-0.01em] text-ink text-balance", size, rtl && "text-left")}
+      className={cn("bidi glow glow-room line-clamp-2 font-display font-light tracking-[-0.01em] text-ink text-balance", size)}
     >
       {title}
     </h1>
