@@ -8,7 +8,8 @@ import { Artwork } from "./Artwork";
 /**
  * RYLORA's signature cover treatment: a printed record sleeve (artwork inset on
  * textured paper, artist and title in wide-tracked caps) with the vinyl disc
- * sliding out of it. The disc's centre label is the artwork itself.
+ * sliding out of it. The disc's centre label is the artwork itself. A semicircular
+ * die-cut on the sleeve's right edge shows the disc inside, as on real sleeves.
  *
  * Geometry is proportional (container-query units), so the same component works
  * from a 56 px playback-bar thumbnail up to the Now Playing stage.
@@ -41,6 +42,15 @@ interface VinylCoverProps {
 // Paper grain: tiny static SVG noise tile, so it costs one decoded image for every sleeve.
 const PAPER =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.33 0 0 0 0 0.3 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+
+/** Radius of the die-cut notch: 14 % of the sleeve, in units of the whole cover's width. */
+const NOTCH = "10.8cqw";
+
+/** The same radius measured inside the sleeve, whose own width is the container there. */
+const NOTCH_INSIDE = "14cqw";
+
+/** The sleeve with a semicircle cut out of the middle of its right edge. */
+const NOTCH_MASK = `radial-gradient(circle at 100% 50%, transparent ${NOTCH}, #000 calc(${NOTCH} + 0.5px))`;
 
 /** Ink colour for sleeve lettering: the artwork accent, deepened to print on paper. */
 function inkFor(accent: string | null | undefined, seed: string): string {
@@ -122,12 +132,15 @@ export const VinylCover = memo(function VinylCover({
         />
       </div>
 
-      {/* Sleeve */}
+      {/* Sleeve. The drop shadows sit on a wrapper so they follow the notch's outline. */}
+      <div className="absolute inset-y-0 left-0 aspect-square [filter:drop-shadow(0_0.35cqw_0.45cqw_rgb(0_0_0/0.45))_drop-shadow(0_2.2cqw_3.2cqw_rgb(0_0_0/0.55))]">
       <div
-        className="absolute inset-y-0 left-0 aspect-square overflow-hidden rounded-[0.4cqw] shadow-[0_2.4cqw_5cqw_-1.6cqw_rgb(0_0_0/0.85)] [container-type:inline-size]"
+        className="absolute inset-0 overflow-hidden rounded-[0.5cqw] [container-type:inline-size]"
         style={{
           backgroundColor: "#e9ebe6",
-          backgroundImage: `${PAPER}, linear-gradient(135deg, #f0f1eb 0%, #dfe2dc 100%)`,
+          backgroundImage: `${PAPER}, linear-gradient(135deg, #f3f4ee 0%, #e4e6e0 55%, #d8dbd4 100%)`,
+          maskImage: NOTCH_MASK,
+          WebkitMaskImage: NOTCH_MASK,
         }}
       >
         {!bare && !fullBleed && artist && (
@@ -141,9 +154,9 @@ export const VinylCover = memo(function VinylCover({
         )}
         <div
           className={cn(
-            "absolute overflow-hidden shadow-[0_0.6cqw_1.6cqw_-0.6cqw_rgb(0_0_0/0.35)]",
+            "absolute overflow-hidden shadow-[0_0.5cqw_1.2cqw_-0.5cqw_rgb(0_0_0/0.4),0_0_0_1px_rgb(0_0_0/0.14)]",
             fullBleed
-              ? "inset-[2.5%]"
+              ? "inset-[3%]"
               : bare
                 ? "inset-[13%]"
                 : "inset-x-[14.5%] top-[18.5%] bottom-[27.5%]",
@@ -158,6 +171,16 @@ export const VinylCover = memo(function VinylCover({
               className="h-full w-full"
             />
           )}
+          {/* Laminated print: a soft gloss sweep and a faint highlight on the top edge. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(118deg, rgb(255 255 255 / 0.2) 0%, rgb(255 255 255 / 0.06) 24%, transparent 42%, transparent 72%, rgb(255 255 255 / 0.05) 100%)",
+              boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.18), inset 0 -1px 0 rgb(0 0 0 / 0.2)",
+            }}
+          />
         </div>
         {!bare && !fullBleed && title && (
           <p
@@ -168,8 +191,25 @@ export const VinylCover = memo(function VinylCover({
             {title}
           </p>
         )}
-        {/* Subtle print edge and light falloff across the card stock. */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,rgb(255_255_255/0.18),transparent_40%,rgb(0_0_0/0.06))] ring-1 ring-black/10 ring-inset" />
+        {/* Card stock: light falloff, the folded spine on the left, and a bevelled edge. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg, rgb(0 0 0 / 0.16) 0%, rgb(255 255 255 / 0.22) 1.1%, transparent 3.2%), linear-gradient(100deg, rgb(255 255 255 / 0.16), transparent 40%, rgb(0 0 0 / 0.07))",
+            boxShadow: "inset 1px 1px 0 rgb(255 255 255 / 0.55), inset -1px -1px 0 rgb(0 0 0 / 0.16), inset 0 0 0 1px rgb(0 0 0 / 0.08)",
+          }}
+        />
+        {/* The cut edge: shading where the paper (and print) were cut through. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(circle at 100% 50%, rgb(0 0 0 / 0.42) ${NOTCH_INSIDE}, rgb(0 0 0 / 0.16) calc(${NOTCH_INSIDE} + 0.4cqw), rgb(255 255 255 / 0.1) calc(${NOTCH_INSIDE} + 0.7cqw), transparent calc(${NOTCH_INSIDE} + 2cqw))`,
+          }}
+        />
+      </div>
       </div>
     </div>
   );
