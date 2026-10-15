@@ -108,6 +108,13 @@ pub struct IndexedFile {
     pub missing: bool,
 }
 
+/// Paths of tracks imported individually rather than through a library folder.
+pub fn loose_track_paths(conn: &Connection) -> AppResult<Vec<String>> {
+    let mut stmt = conn.prepare("SELECT path FROM tracks WHERE folder_id IS NULL")?;
+    let rows = stmt.query_map([], |r| r.get(0))?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
 pub fn indexed_files(conn: &Connection, folder_id: i64) -> AppResult<HashMap<String, IndexedFile>> {
     let mut stmt = conn.prepare(
         "SELECT path_key, id, file_size, file_mtime, missing FROM tracks WHERE folder_id = ?1",
@@ -692,6 +699,16 @@ fn renumber_playlist(conn: &Connection, id: PlaylistId) -> AppResult<()> {
 }
 
 // ---------------------------------------------------------------- settings
+
+/// Settings key holding the user's preferences as a JSON object of strings.
+pub const PREFERENCES_KEY: &str = "preferences";
+
+/// One user preference, if it has been set.
+pub fn preference(conn: &Connection, key: &str) -> AppResult<Option<String>> {
+    Ok(get_setting(conn, PREFERENCES_KEY)?
+        .and_then(|raw| serde_json::from_str::<HashMap<String, String>>(&raw).ok())
+        .and_then(|prefs| prefs.get(key).cloned()))
+}
 
 pub fn get_setting(conn: &Connection, key: &str) -> AppResult<Option<String>> {
     Ok(conn

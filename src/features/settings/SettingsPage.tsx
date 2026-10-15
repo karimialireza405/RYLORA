@@ -118,6 +118,14 @@ export function SettingsPage() {
               void setPreference("scanOnStartup", v ? "true" : "false")
             }
           />
+          <Switch
+            label="Clean up download-site tags"
+            description="Removes website addresses, Telegram handles and site names from titles, and repairs garbled Persian text. Only RYLORA's library changes; your music files stay untouched. Switching this re-reads the library."
+            checked={prefEnabled(prefs, "cleanTags")}
+            onChange={(v) =>
+              void setPreference("cleanTags", v ? "true" : "false")
+            }
+          />
         </div>
       </Section>
 

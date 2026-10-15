@@ -1,6 +1,7 @@
 //! Tag reading via lofty, with graceful fallbacks for missing or malformed metadata.
 
 pub mod artwork;
+pub mod clean;
 pub mod write;
 
 use std::path::Path;
@@ -62,7 +63,8 @@ pub fn title_from_path(path: &Path) -> String {
 }
 
 /// Read tags and properties. Returns `Err` only when the file cannot be parsed as audio at all.
-pub fn read_tags(path: &Path) -> Result<TrackTags, String> {
+/// With `clean_tags`, download-site adverts and broken encodings are repaired (see [`clean`]).
+pub fn read_tags(path: &Path, clean_tags: bool) -> Result<TrackTags, String> {
     let tagged = lofty::read_from_path(path).map_err(|e| e.to_string())?;
     let duration_ms = tagged.properties().duration().as_millis() as u64;
     let tag = tagged.primary_tag().or_else(|| tagged.first_tag());
@@ -86,8 +88,33 @@ pub fn read_tags(path: &Path) -> Result<TrackTags, String> {
             .filter(|d| !d.is_empty());
     }
 
+    let mut album_was_advert = false;
+    if clean_tags {
+        album_was_advert = !tags.album.is_empty();
+        tags.title = clean::tag_value(&tags.title);
+        tags.artist = clean::tag_value(&tags.artist);
+        tags.album = clean::tag_value(&tags.album);
+        tags.album_artist = clean::tag_value(&tags.album_artist);
+        tags.genre = tags.genre.map(|g| clean::tag_value(&g)).filter(|g| !g.is_empty());
+        album_was_advert &= tags.album.is_empty();
+    }
+
     if tags.title.is_empty() {
-        tags.title = title_from_path(path);
+        let stem = title_from_path(path);
+        tags.title = if !clean_tags {
+            stem
+        } else {
+            // A site-named file ("6727a6efb8a1f.mp3") says less than its album, which for
+            // downloaded singles is the song's name.
+            let cleaned = clean::tag_value(&stem);
+            if (cleaned.is_empty() || clean::looks_like_id(&cleaned)) && !tags.album.is_empty() {
+                tags.album.clone()
+            } else if cleaned.is_empty() {
+                stem
+            } else {
+                cleaned
+            }
+        };
     }
     if tags.artist.is_empty() {
         tags.artist = if tags.album_artist.is_empty() { UNKNOWN_ARTIST.into() } else { tags.album_artist.clone() };
@@ -96,7 +123,8 @@ pub fn read_tags(path: &Path) -> Result<TrackTags, String> {
         tags.album_artist = tags.artist.clone();
     }
     if tags.album.is_empty() {
-        tags.album = UNKNOWN_ALBUM.into();
+        // An album tag that held only an advert belongs to a single.
+        tags.album = if album_was_advert { tags.title.clone() } else { UNKNOWN_ALBUM.into() };
     }
     Ok(tags)
 }

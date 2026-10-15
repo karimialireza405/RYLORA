@@ -71,7 +71,7 @@ pub fn run() {
             attach_media_controls(app, &player);
             let library = LibraryService::new(app.handle().clone(), db.clone(), player.clone(), artwork_dir);
             let state = AppState { db, player, library };
-            if commands::settings::scan_on_startup(&state) {
+            if commands::settings::scan_on_startup(&state) || state.library.tags_outdated() {
                 state.library.scan();
             }
             app.manage(state);

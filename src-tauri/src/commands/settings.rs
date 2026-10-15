@@ -9,8 +9,6 @@ use super::AppState;
 use crate::database::repo;
 use crate::error::{AppError, AppResult};
 
-const PREFS_KEY: &str = "preferences";
-
 /// (key, allowed values). An empty slice means "boolean".
 const ALLOWED: &[(&str, &[&str])] = &[
     ("motion", &["system", "reduced", "full"]),
@@ -22,6 +20,8 @@ const ALLOWED: &[(&str, &[&str])] = &[
     ("coverStyle", &["artwork", "vinyl"]),
     ("albumSort", &["title", "artist", "addedAt"]),
     ("panelVisible", &[]),
+    ("cleanTags", &[]),
+    ("language", &["fa", "en"]),
 ];
 
 fn valid_custom(key: &str, value: &str) -> Option<bool> {
@@ -50,7 +50,7 @@ fn valid_custom(key: &str, value: &str) -> Option<bool> {
 
 #[tauri::command]
 pub fn settings_get(state: State<'_, AppState>) -> AppResult<HashMap<String, String>> {
-    let raw = repo::get_setting(&state.db.conn(), PREFS_KEY)?;
+    let raw = repo::get_setting(&state.db.conn(), repo::PREFERENCES_KEY)?;
     Ok(raw
         .and_then(|r| serde_json::from_str(&r).ok())
         .unwrap_or_default())
@@ -75,19 +75,24 @@ pub fn settings_set(state: State<'_, AppState>, key: String, value: String) -> A
         return Err(AppError::Invalid(format!("Invalid value for \"{key}\".")));
     }
     let conn = state.db.conn();
-    let mut prefs: HashMap<String, String> = repo::get_setting(&conn, PREFS_KEY)?
+    let mut prefs: HashMap<String, String> = repo::get_setting(&conn, repo::PREFERENCES_KEY)?
         .and_then(|r| serde_json::from_str(&r).ok())
         .unwrap_or_default();
+    let reindex = key == "cleanTags" && prefs.get(&key) != Some(&value);
     prefs.insert(key, value);
     let json = serde_json::to_string(&prefs).map_err(|e| AppError::Invalid(e.to_string()))?;
-    repo::set_setting(&conn, PREFS_KEY, &json)
+    repo::set_setting(&conn, repo::PREFERENCES_KEY, &json)?;
+    drop(conn);
+    if reindex {
+        // Re-read every file so library values follow the new choice.
+        state.library.scan();
+    }
+    Ok(())
 }
 
 pub fn scan_on_startup(state: &AppState) -> bool {
-    repo::get_setting(&state.db.conn(), PREFS_KEY)
+    repo::preference(&state.db.conn(), "scanOnStartup")
         .ok()
         .flatten()
-        .and_then(|r| serde_json::from_str::<HashMap<String, String>>(&r).ok())
-        .and_then(|p| p.get("scanOnStartup").cloned())
         .is_none_or(|v| v == "true")
 }

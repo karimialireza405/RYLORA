@@ -14,6 +14,16 @@ use crate::error::{AppError, AppResult};
 use crate::events;
 use crate::domain::models::TrackId;
 use crate::library::{is_supported, paths, scanner};
+use crate::metadata::clean;
+
+/// Records which tag-cleaning rules the stored library values were produced with.
+const TAG_CLEANING_APPLIED: &str = "tag_cleaning_applied";
+
+/// Whether tags are cleaned, and the marker stored once a full pass has applied that choice.
+fn tag_cleaning(conn: &rusqlite::Connection) -> AppResult<(bool, String)> {
+    let enabled = repo::preference(conn, "cleanTags")?.is_none_or(|v| v == "true");
+    Ok((enabled, format!("{}:{enabled}", clean::VERSION)))
+}
 
 #[derive(Debug, Default, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -52,6 +62,15 @@ impl LibraryService {
         &self.artwork_dir
     }
 
+    /// True when stored titles were produced by other cleanup rules or setting than the
+    /// current ones, so the next scan must re-read every file.
+    pub fn tags_outdated(&self) -> bool {
+        let conn = self.db.conn();
+        tag_cleaning(&conn)
+            .and_then(|(_, wanted)| Ok(repo::get_setting(&conn, TAG_CLEANING_APPLIED)?.as_deref() != Some(wanted.as_str())))
+            .unwrap_or(false)
+    }
+
     pub fn is_scanning(&self) -> bool {
         self.scanning.load(Ordering::SeqCst)
     }
@@ -80,6 +99,7 @@ impl LibraryService {
     /// in the order given. Unsupported or unreadable files are reported, not fatal.
     pub fn import_files(&self, paths: &[String]) -> AppResult<ImportResult> {
         let mut conn = self.db.open_secondary()?;
+        let (clean_tags, _) = tag_cleaning(&conn)?;
         let tx = conn.transaction()?;
         let mut result = ImportResult::default();
         let mut seen = HashSet::new();
@@ -93,7 +113,7 @@ impl LibraryService {
                 result.rejected.push(raw.clone());
                 continue;
             };
-            match scanner::index_file(&tx, None, &file, &self.artwork_dir) {
+            match scanner::index_file(&tx, None, &file, &self.artwork_dir, clean_tags) {
                 Ok(id) => result.track_ids.push(id),
                 Err(e) => {
                     log::warn!("could not import {raw}: {e}");
@@ -152,10 +172,17 @@ impl LibraryService {
         let result = (|| -> AppResult<scanner::ScanSummary> {
             let mut conn = self.db.open_secondary()?;
             let folders = repo::list_folders(&conn)?;
+            let (clean_tags, wanted) = tag_cleaning(&conn)?;
+            let reindex = repo::get_setting(&conn, TAG_CLEANING_APPLIED)?.as_deref() != Some(wanted.as_str());
             let app = self.app.clone();
-            scanner::scan(&mut conn, &folders, &self.artwork_dir, &self.cancel, move |p| {
+            let options = scanner::ScanOptions { clean_tags, reindex };
+            let summary = scanner::scan(&mut conn, &folders, &self.artwork_dir, options, &self.cancel, move |p| {
                 events::emit(&app, events::LIBRARY_SCAN_PROGRESS, p);
-            })
+            })?;
+            if reindex && !summary.cancelled {
+                repo::set_setting(&conn, TAG_CLEANING_APPLIED, &wanted)?;
+            }
+            Ok(summary)
         })();
         match result {
             Ok(summary) => {

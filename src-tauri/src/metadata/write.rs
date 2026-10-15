@@ -94,10 +94,7 @@ mod tests {
         assert_eq!(std::fs::read(&path).unwrap(), b"not audio");
         assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
     }
-    #[test]
-    fn edits_wav_tags_preserving_audio_properties() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("track.wav");
+    fn write_silent_wav(path: &Path) {
         let data_size = 8820u32;
         let mut bytes = Vec::new();
         bytes.extend_from_slice(b"RIFF");
@@ -113,13 +110,47 @@ mod tests {
         bytes.extend_from_slice(b"data");
         bytes.extend_from_slice(&data_size.to_le_bytes());
         bytes.resize(44 + data_size as usize, 0);
-        std::fs::write(&path, bytes).unwrap();
-        let before = crate::metadata::read_tags(&path).unwrap().duration_ms;
+        std::fs::write(path, bytes).unwrap();
+    }
+    #[test]
+    fn edits_wav_tags_preserving_audio_properties() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("track.wav");
+        write_silent_wav(&path);
+        let before = crate::metadata::read_tags(&path, false).unwrap().duration_ms;
         write_tags(&path, &edit(), None).unwrap();
-        let after = crate::metadata::read_tags(&path).unwrap();
+        let after = crate::metadata::read_tags(&path, false).unwrap();
         assert_eq!(after.title, "نام آهنگ");
         assert_eq!(after.year, Some(2026));
         assert_eq!(after.duration_ms, before);
         assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+    #[test]
+    fn cleaned_reading_recovers_download_site_singles() {
+        let dir = tempfile::tempdir().unwrap();
+        let tag = |path: &Path, title: &str, artist: &str, album: &str| {
+            write_silent_wav(path);
+            let edit = MetadataEdit {
+                title: title.into(),
+                artist: artist.into(),
+                album: album.into(),
+                album_artist: artist.into(),
+                year: None,
+                genre: None,
+                artwork: None,
+            };
+            write_tags(path, &edit, None).unwrap();
+        };
+        let opaque = dir.path().join("6727a6efb8a1f.wav");
+        tag(&opaque, "www.IRNM.org", "Ali Ashabi  www.IRNM.org", "Lafe Asheghi  www.IRNM.org");
+        let cleaned = crate::metadata::read_tags(&opaque, true).unwrap();
+        assert_eq!((cleaned.title.as_str(), cleaned.artist.as_str()), ("Lafe Asheghi", "Ali Ashabi"));
+        assert_eq!((cleaned.album.as_str(), cleaned.album_artist.as_str()), ("Lafe Asheghi", "Ali Ashabi"));
+        assert_eq!(crate::metadata::read_tags(&opaque, false).unwrap().title, "www.IRNM.org");
+
+        let single = dir.path().join("base.wav");
+        tag(&single, "Base Akhe موزیکدل", "Ali Ashabi موزیکدل", "موزیکدل");
+        let cleaned = crate::metadata::read_tags(&single, true).unwrap();
+        assert_eq!((cleaned.title.as_str(), cleaned.album.as_str()), ("Base Akhe", "Base Akhe"));
     }
 }

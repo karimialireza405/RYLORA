@@ -48,6 +48,16 @@ pub struct ScanSummary {
     pub elapsed_ms: u64,
 }
 
+/// How a scan treats files whose size and modification time are unchanged.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ScanOptions {
+    /// Repair download-site tags while reading (library only; files untouched).
+    pub clean_tags: bool,
+    /// Re-read every file, including individually imported ones, because the
+    /// rules that turn tags into library values have changed.
+    pub reindex: bool,
+}
+
 pub struct FileInfo {
     path: PathBuf,
     key: String,
@@ -78,8 +88,14 @@ fn discover(root: &Path, cancel: &AtomicBool) -> Vec<FileInfo> {
 }
 
 /// Read tags and artwork for one file and write it to the database.
-pub fn index_file(conn: &Connection, folder_id: Option<i64>, file: &FileInfo, artwork_dir: &Path) -> Result<TrackId, String> {
-    let tags = metadata::read_tags(&file.path)?;
+pub fn index_file(
+    conn: &Connection,
+    folder_id: Option<i64>,
+    file: &FileInfo,
+    artwork_dir: &Path,
+    clean_tags: bool,
+) -> Result<TrackId, String> {
+    let tags = metadata::read_tags(&file.path, clean_tags)?;
 
     let sidecar = if tags.picture.is_none() { metadata::sidecar_picture(&file.path) } else { None };
     let artwork_hash = match tags.picture.as_ref().or(sidecar.as_ref()) {
@@ -145,6 +161,7 @@ pub fn scan(
     conn: &mut Connection,
     folders: &[LibraryFolder],
     artwork_dir: &Path,
+    options: ScanOptions,
     cancel: &AtomicBool,
     mut progress: impl FnMut(ScanProgress),
 ) -> AppResult<ScanSummary> {
@@ -191,13 +208,13 @@ pub fn scan(
                 seen.insert(file.key.as_str());
                 processed += 1;
                 match indexed.get(&file.key) {
-                    Some(prev) if prev.size == file.size && prev.mtime == file.mtime => {
+                    Some(prev) if !options.reindex && prev.size == file.size && prev.mtime == file.mtime => {
                         if prev.missing {
                             restored.push(prev.id);
                         }
                         summary.unchanged += 1;
                     }
-                    _ => match index_file(&tx, Some(folder_id), file, artwork_dir) {
+                    _ => match index_file(&tx, Some(folder_id), file, artwork_dir, options.clean_tags) {
                         Ok(_) => summary.added_or_updated += 1,
                         Err(e) => {
                             log::warn!("skipping {}: {e}", file.path.display());
@@ -231,9 +248,37 @@ pub fn scan(
         repo::set_missing(conn, &gone, true)?;
     }
 
+    if options.reindex && !cancel.load(Ordering::Relaxed) {
+        reindex_loose_files(conn, artwork_dir, options.clean_tags, &mut summary)?;
+    }
+
     progress(ScanProgress { phase: ScanPhase::Finishing, processed, total, current: None });
     repo::cleanup_orphans(conn)?;
     summary.cancelled |= cancel.load(Ordering::Relaxed);
     summary.elapsed_ms = started.elapsed().as_millis() as u64;
     Ok(summary)
+}
+
+/// Files imported one by one live outside every library folder, so a reindex visits them
+/// directly. Files that are currently unavailable keep their existing values.
+fn reindex_loose_files(
+    conn: &mut Connection,
+    artwork_dir: &Path,
+    clean_tags: bool,
+    summary: &mut ScanSummary,
+) -> AppResult<()> {
+    let paths = repo::loose_track_paths(conn)?;
+    let tx = conn.transaction()?;
+    for path in paths {
+        let Some(file) = file_info(PathBuf::from(&path)) else { continue };
+        match index_file(&tx, None, &file, artwork_dir, clean_tags) {
+            Ok(_) => summary.added_or_updated += 1,
+            Err(e) => {
+                log::warn!("skipping {path}: {e}");
+                summary.failed.push(path);
+            }
+        }
+    }
+    tx.commit()?;
+    Ok(())
 }

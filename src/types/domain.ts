@@ -176,4 +176,6 @@ export type Preferences = Partial<{
   pinnedAlbums: string;
   panelWidth: string;
   panelVisible: "true" | "false";
+  cleanTags: "true" | "false";
+  language: "fa" | "en";
 }>;
