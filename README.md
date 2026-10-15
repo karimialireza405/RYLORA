@@ -9,8 +9,9 @@ is tracked.
 ## Highlights
 
 * **Real playback engine** in Rust (rodio + symphonia) on its own thread:
-  race-free state transitions under rapid skipping/seeking, repeat/shuffle, an
-  editable queue, error recovery and session resume.
+  **gapless playback**, a **10-band equalizer** with presets, **output device
+  selection** that follows Windows when you plug in headphones, race-free state
+  transitions, an editable queue, error recovery and session resume.
 * **Live spectrum visualizer** computed by FFT from the samples actually being
   played — no decorative fake waveforms.
 * **Local library** with incremental background scanning, embedded artwork,

@@ -179,3 +179,23 @@ export type Preferences = Partial<{
   cleanTags: "true" | "false";
   language: "fa" | "en";
 }>;
+
+/** Mirrors `audio::eq::EqSettings`: ten bands at 31 Hz … 16 kHz, gains in dB (±12). */
+export interface EqSettings {
+  enabled: boolean;
+  preampDb: number;
+  gainsDb: number[];
+}
+
+export interface OutputDevice {
+  id: string;
+  name: string;
+  isDefault: boolean;
+}
+
+export interface AudioSettings {
+  equalizer: EqSettings;
+  /** Chosen device id, or null when following the Windows default. */
+  outputDevice: string | null;
+  devices: OutputDevice[];
+}

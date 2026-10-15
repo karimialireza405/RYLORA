@@ -1,4 +1,6 @@
 import type {
+  AudioSettings,
+  EqSettings,
   HistoryEntry,
   ImportResult,
   LibraryFolder,
@@ -60,6 +62,13 @@ export interface Backend {
     clearQueue(): Promise<void>;
     setVisualizer(enabled: boolean): Promise<void>;
     lyrics(trackId: TrackId): Promise<string | null>;
+  };
+
+  audio: {
+    settings(): Promise<AudioSettings>;
+    setEqualizer(settings: EqSettings): Promise<void>;
+    /** null follows the system default output. */
+    setOutputDevice(id: string | null): Promise<void>;
   };
 
   library: {

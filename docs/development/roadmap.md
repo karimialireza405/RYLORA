@@ -24,10 +24,16 @@ Now Playing · Immersive mode · Settings.
 **Covers** — paper record sleeve with a matching vinyl disc everywhere; cover-driven
 accent colours; audio-reactive cover pulse.
 
-**Audio engine** — rodio + symphonia behind `AudioBackend`; play/pause/seek/next/
-previous/volume/mute/shuffle/repeat; queue editing; error skip; device-loss
-recovery; seek timeout guard; real FFT feeding the particle-field visualizer and
-seek ribbon.
+**Audio engine** — rodio + symphonia behind `AudioBackend`, one continuous stream
+per output device: **gapless playback** (prepared next track, sample-accurate
+switch, encoder padding trimmed; repeat-one loops gaplessly), a real **10-band
+equalizer** with presets and preamp, **output device selection** (persisted;
+"System default" follows Windows), resume at the same position when the device
+changes or fails; play/pause/seek/next/previous/volume/mute/shuffle/repeat; queue
+editing; error skip; seek timeout guard; real FFT feeding the visualizer.
+Verified 2026-10-15 in the running app: zero reloads at gapless switches, EQ
+measurably reshapes the playing signal, switching between four real devices
+continues from the same position, and all five formats decode.
 
 **Library** — Add music dialog (files or folders, Ctrl+O), drag & drop, incremental
 background scan, lofty metadata with fallbacks, sidecar `cover.jpg`/`folder.png`
@@ -51,23 +57,22 @@ now loads through `StorageFile`.
 
 ## Next
 
-1. **Gapless playback** — pre-append the next source to the same rodio `Player`
-   (or a dedicated symphonia → cpal pipeline) and verify sample-accurate joins.
-2. **Equalizer** — a real biquad filter chain in the audio path; the UI will only
-   appear once it affects audio.
-3. **Output device selection** — enumerate cpal devices; persist the choice.
-4. **File watching** — `notify` crate to pick up changes without a rescan.
-5. **Synced lyrics** (LRC sidecars / SYLT) with highlighted lines.
-6. **Tray icon** with transport controls and close-to-tray option.
-7. **Smart collections** — never played, by genre/decade.
-8. **Large-library tuning** — measure 50k+ tracks; consider paging the snapshot
+1. **ReplayGain / loudness levelling** and optional **crossfade**, both now
+   straightforward in the playback stream.
+2. **WASAPI exclusive / bit-perfect output** (would need a direct cpal path).
+3. **File watching** — `notify` crate to pick up changes without a rescan.
+4. **Synced lyrics** (LRC sidecars / SYLT) with highlighted lines.
+5. **Tray icon** with transport controls and close-to-tray option.
+6. **Smart collections** — never played, by genre/decade.
+7. **Large-library tuning** — measure 50k+ tracks; consider paging the snapshot
    and FTS5 search if the in-memory approach shows strain.
-9. **Bundle size** — split rarely used routes (frontend JS is ~735 kB before gzip).
-10. **Code signing** for the installer (requires a certificate).
+8. **Bundle size** — split rarely used routes (frontend JS is ~735 kB before gzip).
+9. **Code signing** for the installer (requires a certificate).
 
 ## Known limitations
 
-* Not gapless; no ReplayGain; no EQ; default output device only.
+* No ReplayGain or crossfade; shared-mode (mixed) output only, not bit-perfect.
+* Chained Ogg streams that change sample rate mid-file are not supported.
 * Opus is not supported (symphonia 0.5 has no Opus decoder).
 * The library snapshot is loaded whole into the UI — fine for tens of thousands
   of tracks, not yet measured beyond that.

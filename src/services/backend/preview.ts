@@ -10,6 +10,7 @@ import type { Backend, BackendEvents } from "./types";
 import { setArtworkResolver } from "@/services/artwork";
 import type {
   Album,
+  AudioSettings,
   Artist,
   LibrarySnapshot,
   PlayerSnapshot,
@@ -149,6 +150,15 @@ export function createPreviewBackend(): Backend {
   };
   setQueue(library.tracks.slice(0, 12).map((t) => t.id), 1);
 
+  const audio: AudioSettings = {
+    equalizer: { enabled: false, preampDb: 0, gainsDb: Array(10).fill(0) },
+    outputDevice: null,
+    devices: [
+      { id: "preview-speakers", name: "Speakers (Realtek Audio)", isDefault: true },
+      { id: "preview-headphones", name: "Headphones (USB Audio)", isDefault: false },
+    ],
+  };
+
   const changed = () => emit("player://state", { ...state, queue: [...state.queue] });
   const step = (delta: number) => {
     if (state.cursor === null) return;
@@ -285,6 +295,15 @@ export function createPreviewBackend(): Backend {
       },
       setVisualizer: ok,
       lyrics: async () => null,
+    },
+    audio: {
+      settings: async () => ({ ...audio, equalizer: { ...audio.equalizer, gainsDb: [...audio.equalizer.gainsDb] } }),
+      setEqualizer: async (settings) => {
+        audio.equalizer = settings;
+      },
+      setOutputDevice: async (id) => {
+        audio.outputDevice = id;
+      },
     },
     library: {
       snapshot: async () => library,

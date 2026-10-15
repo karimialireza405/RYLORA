@@ -1,4 +1,4 @@
-import { Heart, ListMusic, Maximize2, MonitorPlay } from "lucide-react";
+import { Heart, ListMusic, Maximize2, MonitorPlay, SlidersVertical } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { LibraryCover } from "@/components/ui/LibraryCover";
@@ -12,6 +12,7 @@ import { setFavorite, useLibrary } from "@/stores/library";
 import { navigate, useRoute } from "@/stores/navigation";
 import { usePlayer } from "@/stores/player";
 import { useUi } from "@/stores/ui";
+import { openSound, useAudio } from "@/stores/audio";
 import { cn } from "@/utils/cn";
 import { useT } from "@/i18n";
 
@@ -25,6 +26,7 @@ export function PlaybackBar() {
     current ? (s.trackById.get(current.id) ?? current) : null,
   );
   const queueOpen = useUi((s) => s.queueOpen);
+  const eqEnabled = useAudio((s) => s.equalizer.enabled);
   const route = useRoute();
 
   return (
@@ -128,6 +130,14 @@ export function PlaybackBar() {
           size="sm"
           disabled={!track}
           onClick={() => navigate({ name: "nowPlaying" })}
+        />
+        <IconButton
+          icon={SlidersVertical}
+          label={t.sound.open}
+          size="sm"
+          active={eqEnabled}
+          aria-haspopup="dialog"
+          onClick={openSound}
         />
         <IconButton
           icon={ListMusic}

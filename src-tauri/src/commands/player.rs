@@ -1,7 +1,8 @@
 use tauri::State;
 
 use super::{validate_ids, AppState};
-use crate::application::player::{PlayerCommand, PlayerSnapshot};
+use crate::application::player::{AudioSettings, PlayerCommand, PlayerSnapshot};
+use crate::audio::eq::EqSettings;
 use crate::domain::models::{RepeatMode, TrackId};
 use crate::error::{AppError, AppResult};
 
@@ -108,4 +109,27 @@ pub fn player_clear_queue(state: State<'_, AppState>) {
 #[tauri::command]
 pub fn player_set_visualizer(state: State<'_, AppState>, enabled: bool) {
     state.player.send(PlayerCommand::SetVisualizer(enabled));
+}
+
+#[tauri::command]
+pub fn audio_settings(state: State<'_, AppState>) -> AppResult<AudioSettings> {
+    state.player.audio_settings().ok_or_else(|| AppError::Unavailable("The player is not responding.".into()))
+}
+
+#[tauri::command]
+pub fn audio_set_equalizer(state: State<'_, AppState>, settings: EqSettings) -> AppResult<()> {
+    if !settings.preamp_db.is_finite() || settings.gains_db.iter().any(|g| !g.is_finite()) {
+        return Err(AppError::Invalid("Equalizer values must be numbers.".into()));
+    }
+    state.player.send(PlayerCommand::SetEqualizer(settings.sanitized()));
+    Ok(())
+}
+
+#[tauri::command]
+pub fn audio_set_output_device(state: State<'_, AppState>, id: Option<String>) -> AppResult<()> {
+    if id.as_ref().is_some_and(|id| id.is_empty() || id.len() > 1024) {
+        return Err(AppError::Invalid("Invalid output device.".into()));
+    }
+    state.player.send(PlayerCommand::SetOutputDevice(id));
+    Ok(())
 }

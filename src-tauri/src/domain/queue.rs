@@ -128,19 +128,30 @@ impl PlayQueue {
         self.entries.iter().position(|e| e.uid == uid)
     }
 
-    /// Compute and move to the next entry. Returns `None` at the end of the queue.
-    pub fn advance(&mut self, reason: Advance) -> Option<QueueEntry> {
+    /// Index `advance(reason)` would move to.
+    fn next_index(&self, reason: Advance) -> Option<usize> {
         let cursor = self.cursor?;
         if reason == Advance::TrackEnded && self.repeat == RepeatMode::One {
-            return self.current();
+            return Some(cursor);
         }
-        let next = if cursor + 1 < self.entries.len() {
-            cursor + 1
+        if cursor + 1 < self.entries.len() {
+            Some(cursor + 1)
         } else if self.repeat != RepeatMode::Off && !self.entries.is_empty() {
-            0
+            Some(0)
         } else {
-            return None;
-        };
+            None
+        }
+    }
+
+    /// The entry `advance(reason)` would move to, without moving (used to prepare
+    /// the next track for gapless playback).
+    pub fn peek_next(&self, reason: Advance) -> Option<QueueEntry> {
+        self.next_index(reason).and_then(|i| self.entries.get(i).copied())
+    }
+
+    /// Compute and move to the next entry. Returns `None` at the end of the queue.
+    pub fn advance(&mut self, reason: Advance) -> Option<QueueEntry> {
+        let next = self.next_index(reason)?;
         self.cursor = Some(next);
         self.current()
     }
@@ -281,6 +292,24 @@ mod tests {
         assert_eq!(q.advance(Advance::TrackEnded).unwrap().track_id, 3);
         assert!(q.advance(Advance::TrackEnded).is_none());
         assert_eq!(q.current().unwrap().track_id, 3, "cursor stays on last entry");
+    }
+
+    #[test]
+    fn peek_matches_advance_without_moving() {
+        let (mut q, _) = queue_of(3, 1);
+        for mode in [RepeatMode::Off, RepeatMode::All, RepeatMode::One] {
+            q.set_repeat(mode);
+            let before = q.cursor();
+            let peeked = q.peek_next(Advance::TrackEnded);
+            assert_eq!(q.cursor(), before);
+            let mut copy = PlayQueue::new();
+            copy.restore(&ids(&q), before);
+            copy.set_repeat(mode);
+            assert_eq!(peeked.map(|e| e.track_id), copy.advance(Advance::TrackEnded).map(|e| e.track_id), "{mode:?}");
+        }
+        q.set_repeat(RepeatMode::Off);
+        q.advance(Advance::UserSkip);
+        assert!(q.peek_next(Advance::TrackEnded).is_none(), "nothing after the last track");
     }
 
     #[test]

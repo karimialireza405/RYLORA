@@ -3,9 +3,10 @@ import {
   FolderOpen,
   FolderPlus,
   RefreshCw,
+  SlidersVertical,
   Trash2,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import mark from "@/assets/brand/mark.svg";
 import { Page, PageHeader } from "@/components/layout/AppShell";
@@ -21,6 +22,8 @@ import { useLibrary } from "@/stores/library";
 import { prefEnabled, setPreference, useUi } from "@/stores/ui";
 import { usePreferredLanguage, useT } from "@/i18n";
 import { ShortcutsTable } from "./ShortcutsDialog";
+import { OutputDevicePicker } from "@/features/sound/SoundDialog";
+import { loadAudioSettings, openSound } from "@/stores/audio";
 
 export function SettingsPage() {
   const t = useT();
@@ -29,6 +32,9 @@ export function SettingsPage() {
   const folders = useLibrary((s) => s.folders);
   const scanning = useLibrary((s) => s.scanning);
   const tracks = useLibrary((s) => s.tracks.length);
+  useEffect(() => {
+    void loadAudioSettings();
+  }, []);
 
   return (
     <Page className="max-w-[880px]">
@@ -186,9 +192,20 @@ export function SettingsPage() {
         <Row label={t.settings.resume}>
           {t.settings.resumeHint}
         </Row>
-        <Row label={t.settings.output}>
-          {t.settings.outputHint}
-        </Row>
+      </Section>
+
+      <Section title={t.sound.title}>
+        <OutputDevicePicker />
+        <Row label={t.sound.gapless}>{t.sound.gaplessHint}</Row>
+        <div className="flex items-center justify-between gap-6 py-3">
+          <div className="min-w-0">
+            <p className="text-body font-medium text-ink">{t.sound.equalizer}</p>
+            <p className="mt-0.5 text-meta text-ink-3">{t.sound.equalizerHint}</p>
+          </div>
+          <Button icon={SlidersVertical} onClick={openSound}>
+            {t.sound.openEqualizer}
+          </Button>
+        </div>
       </Section>
 
       <Section title={t.settings.shortcuts}>

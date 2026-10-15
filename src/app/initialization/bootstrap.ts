@@ -1,6 +1,7 @@
 import { handleDroppedPaths } from "@/features/library/actions";
 import { pushSpectrum } from "@/features/visualizer/spectrumBus";
 import { initBackend } from "@/services/backend";
+import { loadAudioSettings } from "@/stores/audio";
 import { refreshLibrary, useLibrary } from "@/stores/library";
 import { applySnapshot, usePlayer, useProgress } from "@/stores/player";
 import { toast } from "@/stores/toasts";
@@ -79,4 +80,5 @@ async function start(): Promise<void> {
     .then(applySnapshot)
     .catch(() => usePlayer.setState({ ready: true }));
   void refreshLibrary();
+  void loadAudioSettings();
 }

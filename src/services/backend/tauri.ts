@@ -39,6 +39,12 @@ export function createTauriBackend(): Backend {
       lyrics: (trackId) => invoke("track_lyrics", { trackId }),
     },
 
+    audio: {
+      settings: () => invoke("audio_settings"),
+      setEqualizer: (settings) => invoke("audio_set_equalizer", { settings }),
+      setOutputDevice: (id) => invoke("audio_set_output_device", { id }),
+    },
+
     library: {
       snapshot: () => invoke("library_snapshot"),
       folders: () => invoke("library_folders"),

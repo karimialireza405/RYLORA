@@ -1,57 +1,104 @@
 //! rodio + symphonia implementation of [`AudioBackend`].
 //!
-//! One `rodio::Player` is created per track and dropped (which stops it) when the
-//! next track loads, so there is never more than one source audible.
+//! Each open output device gets one long-lived `rodio::Player` carrying a single
+//! [`PlaybackSource`]. Tracks are swapped inside that stream (see `engine`), which
+//! is what makes playback gapless and lets the equalizer and analyser see one
+//! continuous signal.
 
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-use parking_lot::Mutex;
-use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, Source};
+use rodio::cpal::traits::{DeviceTrait, HostTrait};
 
-use super::spectrum::{SampleRing, SpectrumAnalyzer, BAND_COUNT};
-use super::tap::TapSource;
-use super::{AudioBackend, AudioError, LoadedTrack};
+use rodio::{cpal, Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, Source};
+
+use super::engine::{to_output_format, EngineShared, PlaybackSource, Prepared};
+use super::eq::EqSettings;
+use super::spectrum::{SpectrumAnalyzer, BAND_COUNT};
+use super::{AudioBackend, AudioError, LoadedTrack, OutputDevice, Transition};
 
 const SEEK_TIMEOUT: Duration = Duration::from_millis(1500);
+/// How often to check whether the system default output changed (when following it).
+const DEFAULT_DEVICE_POLL: Duration = Duration::from_secs(3);
+
+struct Output {
+    _sink: MixerDeviceSink,
+    player: Arc<Player>,
+    channels: rodio::ChannelCount,
+    sample_rate: rodio::SampleRate,
+    /// Id of the device actually opened.
+    device_id: Option<String>,
+}
+
+#[derive(Clone)]
+struct Queued {
+    path: PathBuf,
+    token: u64,
+    duration: Option<Duration>,
+}
 
 pub struct RodioBackend {
-    sink: Option<MixerDeviceSink>,
+    output: Option<Output>,
     device_failed: Arc<AtomicBool>,
-    player: Option<Arc<Player>>,
-    ring: Arc<Mutex<SampleRing>>,
+    shared: Arc<EngineShared>,
     analyzer: SpectrumAnalyzer,
     gain: f32,
+    paused: bool,
+    /// `None` follows the Windows default device.
+    device_preference: Option<String>,
+    last_default_poll: Instant,
+    current: Option<Queued>,
+    next: Option<Queued>,
+    seen_transitions: u64,
 }
 
 impl RodioBackend {
     pub fn new() -> Self {
         Self {
-            sink: None,
+            output: None,
             device_failed: Arc::new(AtomicBool::new(false)),
-            player: None,
-            ring: Arc::new(Mutex::new(SampleRing::new())),
+            shared: EngineShared::new(),
             analyzer: SpectrumAnalyzer::new(),
             gain: 1.0,
+            paused: true,
+            device_preference: None,
+            last_default_poll: Instant::now(),
+            current: None,
+            next: None,
+            seen_transitions: 0,
         }
     }
 
-    /// Open (or re-open after a device error) the default output device.
-    fn ensure_sink(&mut self) -> Result<(), AudioError> {
-        if self.device_failed.swap(false, Ordering::SeqCst) {
-            log::warn!("audio device reported an error; reopening output");
-            self.player = None;
-            self.sink = None;
+    fn host() -> cpal::Host {
+        cpal::default_host()
+    }
+
+    fn device_id(device: &cpal::Device) -> Option<String> {
+        device.id().ok().map(|id| id.to_string())
+    }
+
+    /// The preferred device if it is present, otherwise the system default.
+    fn resolve_device(&self) -> Result<cpal::Device, AudioError> {
+        let host = Self::host();
+        if let Some(id) = &self.device_preference {
+            if let Some(device) = id.parse().ok().and_then(|id| host.device_by_id(&id)) {
+                return Ok(device);
+            }
+            log::warn!("preferred output device {id} is not available; using the system default");
         }
-        if self.sink.is_some() {
-            return Ok(());
-        }
+        host.default_output_device().ok_or_else(|| AudioError::Device("no output device found".into()))
+    }
+
+    fn open_output(&mut self) -> Result<(), AudioError> {
+        let device = self.resolve_device()?;
+        let device_id = Self::device_id(&device);
+        let name = device.to_string();
         let failed = self.device_failed.clone();
-        let mut sink = DeviceSinkBuilder::from_default_device()
+        let mut sink = DeviceSinkBuilder::from_device(device)
             .map_err(|e| AudioError::Device(e.to_string()))?
             .with_error_callback(move |err| {
                 log::error!("audio stream error: {err}");
@@ -60,13 +107,89 @@ impl RodioBackend {
             .open_sink_or_fallback()
             .map_err(|e| AudioError::Device(e.to_string()))?;
         sink.log_on_drop(false);
-        log::info!(
-            "audio output opened: {} Hz, {} channels",
-            sink.config().sample_rate(),
-            sink.config().channel_count()
-        );
-        self.sink = Some(sink);
+        let channels = sink.config().channel_count();
+        let sample_rate = sink.config().sample_rate();
+        log::info!("audio output opened: {name} ({sample_rate} Hz, {channels} channels)");
+
+        let player = Player::connect_new(sink.mixer());
+        player.set_volume(self.gain);
+        if self.paused {
+            player.pause();
+        }
+        player.append(PlaybackSource::new(self.shared.clone(), channels, sample_rate));
+        self.seen_transitions = self.shared.transitions();
+        self.output = Some(Output { _sink: sink, player: Arc::new(player), channels, sample_rate, device_id });
+        self.last_default_poll = Instant::now();
         Ok(())
+    }
+
+    fn ensure_output(&mut self) -> Result<&Output, AudioError> {
+        if self.output.is_none() {
+            self.open_output()?;
+        }
+        Ok(self.output.as_ref().expect("output just opened"))
+    }
+
+    /// Decode and convert a file for the open output.
+    fn prepare(&mut self, path: &Path, token: u64) -> Result<(Prepared, Option<Duration>), AudioError> {
+        let (channels, sample_rate) = {
+            let out = self.ensure_output()?;
+            (out.channels, out.sample_rate)
+        };
+        let file = File::open(path)?;
+        let byte_len = file.metadata().map(|m| m.len()).ok();
+        let mut builder = Decoder::builder()
+            .with_data(BufReader::new(file))
+            .with_seekable(true)
+            // Trims encoder delay/padding (LAME, iTunSMPB) so albums join without a gap.
+            .with_gapless(true);
+        if let Some(len) = byte_len {
+            builder = builder.with_byte_len(len);
+        }
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            builder = builder.with_hint(ext);
+        }
+        let decoder = builder.build().map_err(|e| AudioError::Decode(e.to_string()))?;
+        let duration = decoder.total_duration();
+        let source = to_output_format(decoder, channels, sample_rate);
+        Ok((Prepared { source, token }, duration))
+    }
+
+    /// Reopen the output (device switch or failure) and continue where we were.
+    fn reopen(&mut self) -> Result<(), AudioError> {
+        let resume_at = self.position();
+        let current = self.current.clone();
+        let next = self.next.take();
+        self.output = None;
+        self.open_output()?;
+        if let Some(cur) = current {
+            match self.prepare(&cur.path, cur.token) {
+                Ok((prepared, _)) => {
+                    self.shared.replace(prepared);
+                    if resume_at > Duration::ZERO {
+                        self.seek(resume_at)?;
+                    }
+                }
+                Err(e) => {
+                    log::warn!("could not resume after reopening output: {e}");
+                    self.current = None;
+                }
+            }
+        }
+        if let Some(n) = next {
+            self.set_next(Some((n.path.as_path(), n.token)));
+        }
+        Ok(())
+    }
+
+    fn default_device_changed(&mut self) -> bool {
+        if self.device_preference.is_some() || self.last_default_poll.elapsed() < DEFAULT_DEVICE_POLL {
+            return false;
+        }
+        self.last_default_poll = Instant::now();
+        let Some(open) = self.output.as_ref() else { return false };
+        let default = Self::host().default_output_device().and_then(|d| Self::device_id(&d));
+        default.is_some() && default != open.device_id
     }
 }
 
@@ -77,53 +200,92 @@ impl Default for RodioBackend {
 }
 
 impl AudioBackend for RodioBackend {
-    fn load(&mut self, path: &Path, paused: bool) -> Result<LoadedTrack, AudioError> {
-        // Stop the previous track before anything else so a failed load never leaves it playing.
-        self.player = None;
-        self.ensure_sink()?;
-
-        let file = File::open(path)?;
-        let byte_len = file.metadata().map(|m| m.len()).ok();
-        let mut builder = Decoder::builder().with_data(BufReader::new(file)).with_seekable(true);
-        if let Some(len) = byte_len {
-            builder = builder.with_byte_len(len);
+    fn load(&mut self, path: &Path, token: u64, paused: bool) -> Result<LoadedTrack, AudioError> {
+        // Stop the previous track first so a failed load never leaves it playing.
+        self.shared.clear();
+        self.current = None;
+        self.next = None;
+        self.paused = paused;
+        let (prepared, duration) = self.prepare(path, token)?;
+        self.shared.replace(prepared);
+        self.current = Some(Queued { path: path.to_path_buf(), token, duration });
+        if let Some(out) = &self.output {
+            if paused {
+                out.player.pause();
+            } else {
+                out.player.play();
+            }
         }
-        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-            builder = builder.with_hint(ext);
-        }
-        let decoder = builder.build().map_err(|e| AudioError::Decode(e.to_string()))?;
-        let duration = decoder.total_duration();
-
-        let sink = self.sink.as_ref().ok_or_else(|| AudioError::Device("output not open".into()))?;
-        let player = Player::connect_new(sink.mixer());
-        player.set_volume(self.gain);
-        if paused {
-            player.pause();
-        }
-        player.append(TapSource::new(decoder, self.ring.clone()));
-        self.player = Some(Arc::new(player));
         Ok(LoadedTrack { duration })
     }
 
+    fn set_next(&mut self, next: Option<(&Path, u64)>) {
+        let unchanged = match (&self.next, next) {
+            (None, None) => true,
+            (Some(q), Some((path, token))) => q.path == path && q.token == token,
+            _ => false,
+        };
+        if unchanged {
+            return;
+        }
+        let prepared = next.and_then(|(path, token)| match self.prepare(path, token) {
+            Ok((prepared, duration)) => Some((prepared, Queued { path: path.to_path_buf(), token, duration })),
+            Err(e) => {
+                // The natural end-of-track path will report it when it is actually reached.
+                log::warn!("could not prepare next track {}: {e}", path.display());
+                None
+            }
+        });
+        match prepared {
+            Some((p, queued)) => {
+                self.shared.set_next(Some(p));
+                self.next = Some(queued);
+            }
+            None => {
+                self.shared.set_next(None);
+                self.next = None;
+            }
+        }
+    }
+
+    fn take_transition(&mut self) -> Option<Transition> {
+        let count = self.shared.transitions();
+        if count == self.seen_transitions {
+            return None;
+        }
+        self.seen_transitions = count;
+        let token = self.shared.current_token();
+        // The prepared track is now the current one.
+        if self.next.as_ref().is_some_and(|n| n.token == token) {
+            self.current = self.next.take();
+        }
+        Some(Transition { token, duration: self.current.as_ref().and_then(|c| c.duration) })
+    }
+
     fn play(&mut self) {
-        if let Some(p) = &self.player {
-            p.play();
+        self.paused = false;
+        if let Some(out) = &self.output {
+            out.player.play();
         }
     }
 
     fn pause(&mut self) {
-        if let Some(p) = &self.player {
-            p.pause();
+        self.paused = true;
+        if let Some(out) = &self.output {
+            out.player.pause();
         }
     }
 
     fn stop(&mut self) {
-        self.player = None;
-        self.ring.lock().clear();
+        self.shared.clear();
+        self.current = None;
+        self.next = None;
+        self.pause();
+        self.shared.ring.lock().clear();
     }
 
     fn seek(&mut self, position: Duration) -> Result<(), AudioError> {
-        let Some(player) = self.player.clone() else { return Ok(()) };
+        let Some(player) = self.output.as_ref().map(|o| o.player.clone()) else { return Ok(()) };
         // `try_seek` blocks until the audio callback applies it. If the device has
         // stalled that would never happen, so wait on a helper thread with a timeout.
         let (tx, rx) = crossbeam_channel::bounded(1);
@@ -131,10 +293,7 @@ impl AudioBackend for RodioBackend {
             let _ = tx.send(player.try_seek(position).map_err(|e| e.to_string()));
         });
         match rx.recv_timeout(SEEK_TIMEOUT) {
-            Ok(Ok(())) => {
-                self.ring.lock().clear();
-                Ok(())
-            }
+            Ok(Ok(())) => Ok(()),
             Ok(Err(e)) => Err(AudioError::Seek(e)),
             Err(_) => Err(AudioError::Seek("audio output is not responding".into())),
         }
@@ -142,26 +301,84 @@ impl AudioBackend for RodioBackend {
 
     fn set_gain(&mut self, gain: f32) {
         self.gain = gain.clamp(0.0, 1.0);
-        if let Some(p) = &self.player {
-            p.set_volume(self.gain);
+        if let Some(out) = &self.output {
+            out.player.set_volume(self.gain);
         }
     }
 
     fn position(&self) -> Duration {
-        self.player.as_ref().map(|p| p.get_pos()).unwrap_or_default()
+        match &self.output {
+            Some(out) if self.current.is_some() => {
+                Duration::from_secs_f64(self.shared.position_frames() as f64 / out.sample_rate.get() as f64)
+            }
+            _ => Duration::ZERO,
+        }
     }
 
     fn is_loaded(&self) -> bool {
-        self.player.is_some()
+        self.current.is_some()
     }
 
     fn is_finished(&self) -> bool {
-        self.player.as_ref().is_some_and(|p| p.empty())
+        self.current.is_some() && self.shared.finished()
+    }
+
+    fn set_equalizer(&mut self, settings: EqSettings) {
+        self.shared.eq.set(settings);
+    }
+
+    fn equalizer(&self) -> EqSettings {
+        self.shared.eq.get()
+    }
+
+    fn output_devices(&self) -> Vec<OutputDevice> {
+        let host = Self::host();
+        let default_id = host.default_output_device().and_then(|d| Self::device_id(&d));
+        let mut list: Vec<OutputDevice> = host
+            .output_devices()
+            .map(|devices| {
+                devices
+                    .filter_map(|d| {
+                        let id = Self::device_id(&d)?;
+                        Some(OutputDevice { is_default: Some(&id) == default_id.as_ref(), name: d.to_string(), id })
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        list.sort_by(|a, b| b.is_default.cmp(&a.is_default).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+        list
+    }
+
+    fn set_output_device(&mut self, id: Option<String>) -> Result<(), AudioError> {
+        self.device_preference = id;
+        if self.output.is_none() {
+            return Ok(());
+        }
+        let wanted = self.resolve_device().ok().and_then(|d| Self::device_id(&d));
+        if wanted.is_some() && wanted == self.output.as_ref().and_then(|o| o.device_id.clone()) {
+            return Ok(());
+        }
+        self.reopen()
+    }
+
+    fn maintain(&mut self) -> Result<bool, AudioError> {
+        let failed = self.device_failed.swap(false, Ordering::SeqCst);
+        if failed {
+            log::warn!("audio device reported an error; reopening output");
+        }
+        if failed || self.default_device_changed() {
+            if !failed {
+                log::info!("system default output changed; following it");
+            }
+            self.reopen()?;
+            return Ok(true);
+        }
+        Ok(false)
     }
 
     fn spectrum(&mut self, playing: bool) -> Option<[u8; BAND_COUNT]> {
-        if playing && self.player.is_some() {
-            let ring = self.ring.lock();
+        if playing && self.current.is_some() {
+            let ring = self.shared.ring.lock();
             Some(self.analyzer.analyze(&ring))
         } else if self.analyzer.is_silent() {
             None

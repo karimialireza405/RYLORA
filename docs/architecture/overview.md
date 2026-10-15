@@ -41,19 +41,38 @@ and renders the snapshot the backend emits.
   strictly in order — rapid skips/seeks cannot race (verified: 12 queued skips
   land on a deterministic track with a single playback clock).
 * **`AudioBackend` trait** (`audio/mod.rs`) isolates the engine. The current
-  implementation, `RodioBackend`, uses rodio 0.23 + symphonia 0.5 and creates one
-  `rodio::Player` per track (dropping it stops the previous track immediately).
+  implementation, `RodioBackend`, uses rodio 0.23 + symphonia 0.5.
+* **One continuous stream per output** (`audio/engine.rs`). Each open device gets a
+  single long-lived `rodio::Player` carrying one `PlaybackSource`. Tracks are
+  decoded with symphonia's gapless mode (encoder delay/padding trimmed), converted
+  to the device's channels and sample rate, and swapped *inside* that stream:
+  * **Gapless:** the player thread keeps the next entry prepared
+    (`PlayQueue::peek_next` → `AudioBackend::set_next`); when the current track's
+    last sample is pulled, the audio thread continues with the prepared track on
+    the very next frame and reports a transition. The queue then follows the audio
+    (`take_transition` → `jump_to`). Queue edits, shuffle and repeat changes
+    re-prepare the next track; repeat-one loops gaplessly.
+  * **Equalizer** (`audio/eq.rs`): 10 RBJ biquads (low shelf 31 Hz, peaking
+    62 Hz–8 kHz, high shelf 16 kHz, ±12 dB) plus preamp, with a soft limiter above
+    0.9 FS. Settings reach the audio thread through a versioned `EqControl`; a flat
+    or disabled EQ is bit-transparent. Persisted under the `equalizer` setting.
+  * **Spectrum:** the stream copies a mono downmix of what is heard (after EQ,
+    before volume) into the analyser ring. A 2048-point FFT at ~30 Hz drives the
+    visualizer, seek ribbon and cover pulse, only while something displays them.
+  * **Silence when idle:** the stream never ends, so the output stays open and
+    position is tracked by the stream itself (frames since the track started).
+* **Output devices:** cpal device ids (stable across restarts) are listed and the
+  choice persists (`outputDevice`). "System default" follows Windows: the backend
+  polls the default every 3 s and moves playback when it changes. Switching or
+  losing a device reopens the output and resumes the same track at the same
+  position, including its prepared successor.
+* **Format quirk handled:** `UniformSourceIterator` treated Vorbis' zero-length
+  first span as end-of-file, so OGG played 0 s after resampling. `SteadySpan`
+  presents each file as one span; chained Ogg streams that change sample rate
+  mid-file are not supported.
 * **Seek safety:** rodio's `try_seek` blocks until the audio callback applies it,
   so it runs on a helper thread with a 1.5 s timeout — a stalled/unplugged device
   can never hang the player thread.
-* **Device loss:** a cpal error callback flags the sink; the next load reopens the
-  default output device.
-* **Visualizer:** `TapSource` copies a mono downmix of the *decoded audio actually
-  being pulled by the device* into a ring buffer (batched, `try_lock`, never
-  blocks the audio thread). The player thread runs a 2048-point FFT at ~30 Hz,
-  maps 64 log-spaced bands to 0–255 and emits `player://spectrum` — only while a
-  visualizer is mounted (reference-counted), and it stops emitting once the bars
-  settle while paused.
 * **Session persistence:** queue, cursor, position, volume, mute and repeat are
   saved (throttled) and on exit; restored paused on launch.
 
@@ -61,11 +80,12 @@ and renders the snapshot the backend emits.
 
 * Pure Rust, no DLL to ship or license-check, small binary.
 * Covers the target formats (MP3, FLAC, WAV, OGG Vorbis, AAC/M4A) — all verified.
-* A `Source` wrapper gives direct sample access for the real-time spectrum.
-* The `AudioBackend` trait keeps libmpv (or a custom symphonia→cpal pipeline for
-  gapless/bit-perfect output) as a drop-in replacement if DSP needs grow.
+* Owning the `Source` gives sample-accurate control for gapless switching, the EQ
+  and the analyser without an external DSP framework.
+* The `AudioBackend` trait still allows libmpv or a direct symphonia → cpal
+  pipeline later (e.g. for bit-perfect/exclusive output).
 
-Not claimed: gapless playback, bit-perfect/exclusive output, DSP/EQ.
+Not claimed: bit-perfect/exclusive (WASAPI exclusive) output, ReplayGain, crossfade.
 
 ## Library indexing
 

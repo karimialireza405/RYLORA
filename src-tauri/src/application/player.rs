@@ -11,8 +11,9 @@ use crossbeam_channel::{never, select, tick, unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
+use crate::audio::eq::EqSettings;
 use crate::audio::rodio_backend::RodioBackend;
-use crate::audio::AudioBackend;
+use crate::audio::{AudioBackend, OutputDevice, Transition};
 use crate::database::{repo, Db};
 use crate::domain::models::{PlaybackStatus, RepeatMode, Track, TrackId};
 use crate::domain::queue::{Advance, PlayQueue, QueueEntry};
@@ -25,6 +26,8 @@ const SESSION_SAVE_INTERVAL: Duration = Duration::from_secs(5);
 /// "Previous" restarts the current track when we are further in than this.
 const RESTART_THRESHOLD_MS: u64 = 3_000;
 const SESSION_KEY: &str = "session";
+const EQUALIZER_KEY: &str = "equalizer";
+const OUTPUT_DEVICE_KEY: &str = "outputDevice";
 
 /// OS media integration (media keys, system flyout). Implemented per platform in
 /// `crate::system`; the player pushes every state change to it.
@@ -62,6 +65,10 @@ pub enum PlayerCommand {
     SetVisualizer(bool),
     LibraryChanged,
     AttachMediaSession(MediaSessionBox),
+    SetEqualizer(EqSettings),
+    /// `None` follows the system default output.
+    SetOutputDevice(Option<String>),
+    AudioSettings(Sender<AudioSettings>),
     Snapshot(Sender<PlayerSnapshot>),
     Shutdown(Sender<()>),
 }
@@ -80,6 +87,16 @@ pub struct PlayerSnapshot {
     pub muted: bool,
     pub shuffle: bool,
     pub repeat: RepeatMode,
+}
+
+/// Sound settings shown in the UI.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioSettings {
+    pub equalizer: EqSettings,
+    /// Chosen device id, or `None` when following the system default.
+    pub output_device: Option<String>,
+    pub devices: Vec<OutputDevice>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -121,6 +138,12 @@ impl PlayerHandle {
         }
     }
 
+    pub fn audio_settings(&self) -> Option<AudioSettings> {
+        let (tx, rx) = crossbeam_channel::bounded(1);
+        self.send(PlayerCommand::AudioSettings(tx));
+        rx.recv_timeout(Duration::from_secs(3)).ok()
+    }
+
     pub fn snapshot(&self) -> Option<PlayerSnapshot> {
         let (tx, rx) = crossbeam_channel::bounded(1);
         self.send(PlayerCommand::Snapshot(tx));
@@ -141,6 +164,7 @@ pub fn spawn(app: AppHandle, db: Db, artwork_dir: PathBuf) -> PlayerHandle {
         .name("rylora-player".into())
         .spawn(move || {
             let mut player = Player::new(app, db, artwork_dir, RodioBackend::new());
+            player.restore_audio_settings();
             player.restore_session();
             player.run(rx);
         })
@@ -153,6 +177,7 @@ struct Player<B: AudioBackend> {
     db: Db,
     artwork_dir: PathBuf,
     media: Option<Box<dyn MediaSession>>,
+    output_device: Option<String>,
     backend: B,
     queue: PlayQueue,
     rng: SplitMix64,
@@ -175,6 +200,7 @@ impl<B: AudioBackend> Player<B> {
             db,
             artwork_dir,
             media: None,
+            output_device: None,
             backend,
             queue: PlayQueue::new(),
             rng: SplitMix64::from_time(),
@@ -311,6 +337,25 @@ impl<B: AudioBackend> Player<B> {
                 self.media = Some(session.0);
                 self.changed();
             }
+            PlayerCommand::SetEqualizer(settings) => {
+                let settings = settings.sanitized();
+                self.backend.set_equalizer(settings);
+                self.persist(EQUALIZER_KEY, &serde_json::to_string(&settings).unwrap_or_default());
+            }
+            PlayerCommand::SetOutputDevice(id) => {
+                self.output_device = id.clone();
+                self.persist(OUTPUT_DEVICE_KEY, id.as_deref().unwrap_or(""));
+                if let Err(e) = self.backend.set_output_device(id) {
+                    self.report_error(e.to_string(), None);
+                }
+            }
+            PlayerCommand::AudioSettings(reply) => {
+                let _ = reply.send(AudioSettings {
+                    equalizer: self.backend.equalizer(),
+                    output_device: self.output_device.clone(),
+                    devices: self.backend.output_devices(),
+                });
+            }
             PlayerCommand::Snapshot(reply) => {
                 let _ = reply.send(self.snapshot());
             }
@@ -430,7 +475,7 @@ impl<B: AudioBackend> Player<B> {
         self.apply_gain();
         let loaded = self
             .backend
-            .load(Path::new(&track.path), !autoplay)
+            .load(Path::new(&track.path), entry.uid, !autoplay)
             .map_err(|e| format!("Can't play \"{}\": {e}", track.title))?;
 
         self.duration_ms = loaded.duration.map(|d| d.as_millis() as u64).unwrap_or(track.duration_ms);
@@ -453,6 +498,14 @@ impl<B: AudioBackend> Player<B> {
     }
 
     fn on_tick(&mut self) {
+        match self.backend.maintain() {
+            Ok(true) => self.changed(),
+            Ok(false) => {}
+            Err(e) => self.report_error(e.to_string(), None),
+        }
+        while let Some(transition) = self.backend.take_transition() {
+            self.on_transition(transition);
+        }
         if self.status == PlaybackStatus::Playing {
             if self.backend.is_finished() {
                 self.next(Advance::TrackEnded);
@@ -466,6 +519,61 @@ impl<B: AudioBackend> Player<B> {
         let playing = self.status == PlaybackStatus::Playing;
         if (self.session_dirty && since >= SESSION_SAVE_INTERVAL) || (playing && since >= SESSION_SAVE_INTERVAL * 2) {
             self.save_session();
+        }
+    }
+
+    /// The prepared next track took over without a gap: move the queue to it.
+    fn on_transition(&mut self, transition: Transition) {
+        if self.queue.jump_to(transition.token).is_none() {
+            // The entry left the queue just as it started; continue from the queue instead.
+            log::warn!("gapless transition to an entry no longer queued");
+            match self.queue.advance(Advance::TrackEnded) {
+                Some(_) => self.start_current(true, 0),
+                None => self.stop_playback(),
+            }
+            return;
+        }
+        let Some(track) = self.queue.current().and_then(|e| self.track(e.track_id)) else { return };
+        self.duration_ms = transition.duration.map(|d| d.as_millis() as u64).unwrap_or(track.duration_ms);
+        if let Err(e) = repo::record_play(&self.db.conn(), track.id) {
+            log::warn!("could not record play: {e}");
+        }
+        self.changed();
+        self.emit_progress(self.position_ms());
+    }
+
+    /// Keep the backend's prepared next track in step with the queue (gapless playback).
+    fn sync_next(&mut self) {
+        if !self.backend.is_loaded() {
+            return;
+        }
+        let next = self
+            .queue
+            .peek_next(Advance::TrackEnded)
+            .and_then(|entry| self.track(entry.track_id).filter(|t| !t.missing).map(|t| (t.path, entry.uid)));
+        self.backend.set_next(next.as_ref().map(|(path, uid)| (Path::new(path.as_str()), *uid)));
+    }
+
+    fn persist(&self, key: &str, value: &str) {
+        if let Err(e) = repo::set_setting(&self.db.conn(), key, value) {
+            log::warn!("could not save {key}: {e}");
+        }
+    }
+
+    fn restore_audio_settings(&mut self) {
+        let conn = self.db.conn();
+        if let Ok(Some(json)) = repo::get_setting(&conn, EQUALIZER_KEY) {
+            match serde_json::from_str::<EqSettings>(&json) {
+                Ok(settings) => self.backend.set_equalizer(settings.sanitized()),
+                Err(e) => log::warn!("discarding unreadable equalizer settings: {e}"),
+            }
+        }
+        if let Ok(Some(id)) = repo::get_setting(&conn, OUTPUT_DEVICE_KEY) {
+            if !id.is_empty() {
+                self.output_device = Some(id.clone());
+                // The output is opened lazily, so this only records the preference.
+                let _ = self.backend.set_output_device(Some(id));
+            }
         }
     }
 
@@ -528,6 +636,7 @@ impl<B: AudioBackend> Player<B> {
 
     fn changed(&mut self) {
         self.session_dirty = true;
+        self.sync_next();
         let snapshot = self.snapshot();
         if let Some(media) = self.media.as_mut() {
             let artwork = snapshot.current.as_ref().and_then(|t| t.artwork.as_deref()).map(|hash| {

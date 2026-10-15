@@ -43,7 +43,8 @@ export function Switch({
         <span
           className={cn(
             "inline-block size-[18px] rounded-full bg-ink shadow-sm transition-transform duration-(--duration-standard) ease-(--ease-out)",
-            checked ? "translate-x-[19px]" : "translate-x-[3px]",
+            // The knob starts at the inline start; "on" moves it toward the inline end.
+            checked ? "translate-x-[19px] rtl:-translate-x-[19px]" : "translate-x-[3px] rtl:-translate-x-[3px]",
           )}
         />
       </button>

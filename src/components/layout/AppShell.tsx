@@ -9,6 +9,7 @@ import { NewPlaylistDialog } from "@/features/playlists/NewPlaylistDialog";
 import { AddMusicDialog } from "@/features/library/AddMusicDialog";
 import { EditTrackDialog } from "@/features/library/EditTrackDialog";
 import { ShortcutsDialog } from "@/features/settings/ShortcutsDialog";
+import { SoundDialog } from "@/features/sound/SoundDialog";
 import { useNavigation } from "@/stores/navigation";
 import { useRoute } from "@/stores/navigation";
 import { usePlayer } from "@/stores/player";
@@ -84,6 +85,7 @@ export function AppShell() {
       <AddMusicDialog />
       <EditTrackDialog />
       <ShortcutsDialog />
+      <SoundDialog />
       <Toaster />
       {draggedTracks > 0 && (
         <div
