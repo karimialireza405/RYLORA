@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import { messages } from "@/i18n";
 import { backend } from "@/services/backend";
-import type { AudioSettings, EqSettings } from "@/types/domain";
+import type { AudioSettings, CrossfadeSettings, EqSettings, LevelingSettings } from "@/types/domain";
 import { notifyError } from "./toasts";
 
 /** Band centres, mirrored from `audio::eq::BAND_FREQUENCIES`. */
@@ -43,7 +43,13 @@ export const useAudio = create<AudioState>(() => ({
   equalizer: { enabled: false, preampDb: 0, gainsDb: Array(10).fill(0) },
   outputDevice: null,
   devices: [],
+  leveling: { mode: "track", target: "normal" },
+  crossfade: { enabled: false, seconds: 6, keepAlbumsGapless: true },
+  loudness: { measured: 0, total: 0 },
 }));
+
+export const CROSSFADE_MIN_S = 1;
+export const CROSSFADE_MAX_S = 12;
 
 export async function loadAudioSettings(): Promise<void> {
   try {
@@ -92,4 +98,30 @@ export async function setOutputDevice(id: string | null): Promise<void> {
     useAudio.setState({ outputDevice: previous });
     notifyError(messages().sound.saveFailed, e);
   }
+}
+
+export async function setLeveling(patch: Partial<LevelingSettings>): Promise<void> {
+  const previous = useAudio.getState().leveling;
+  const leveling = { ...previous, ...patch };
+  useAudio.setState({ leveling });
+  try {
+    await backend().audio.setLeveling(leveling);
+  } catch (e) {
+    useAudio.setState({ leveling: previous });
+    notifyError(messages().sound.saveFailed, e);
+  }
+}
+
+let crossfadeTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Update crossfade at once in the UI; the slider sends its final value after a short pause. */
+export function setCrossfade(patch: Partial<CrossfadeSettings>): void {
+  const crossfade = { ...useAudio.getState().crossfade, ...patch };
+  useAudio.setState({ crossfade });
+  clearTimeout(crossfadeTimer);
+  crossfadeTimer = setTimeout(() => {
+    backend()
+      .audio.setCrossfade(useAudio.getState().crossfade)
+      .catch((e: unknown) => notifyError(messages().sound.saveFailed, e));
+  }, 150);
 }

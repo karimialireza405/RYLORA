@@ -193,9 +193,36 @@ export interface OutputDevice {
   isDefault: boolean;
 }
 
+/** Mirrors `audio::loudness::LevelingSettings`. */
+export type LevelingMode = "off" | "track" | "album";
+export type LevelingTarget = "quiet" | "normal" | "loud";
+
+export interface LevelingSettings {
+  mode: LevelingMode;
+  target: LevelingTarget;
+}
+
+/** Mirrors `application::player::CrossfadeSettings`. */
+export interface CrossfadeSettings {
+  enabled: boolean;
+  /** 1–12 s in half-second steps. */
+  seconds: number;
+  /** Consecutive tracks of an album stay gapless. */
+  keepAlbumsGapless: boolean;
+}
+
+/** Songs whose loudness is known, out of all available songs. */
+export interface LoudnessProgress {
+  measured: number;
+  total: number;
+}
+
 export interface AudioSettings {
   equalizer: EqSettings;
   /** Chosen device id, or null when following the Windows default. */
   outputDevice: string | null;
   devices: OutputDevice[];
+  leveling: LevelingSettings;
+  crossfade: CrossfadeSettings;
+  loudness: LoudnessProgress;
 }

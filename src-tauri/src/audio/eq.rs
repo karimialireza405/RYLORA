@@ -212,11 +212,17 @@ impl Equalizer {
             x = y;
         }
         // Boosts can exceed full scale; clip softly rather than wrapping or hard-clipping.
-        if x.abs() > 0.9 {
-            x.signum() * (0.9 + 0.1 * ((x.abs() - 0.9) / 0.1).tanh())
-        } else {
-            x
-        }
+        soft_clip(x)
+    }
+}
+
+/// Leaves samples below 0.9 untouched and bends anything louder smoothly towards 1.0.
+#[inline]
+pub fn soft_clip(x: f32) -> f32 {
+    if x.abs() > 0.9 {
+        x.signum() * (0.9 + 0.1 * ((x.abs() - 0.9) / 0.1).tanh())
+    } else {
+        x
     }
 }
 

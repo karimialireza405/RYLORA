@@ -5,25 +5,28 @@
 //! is what makes playback gapless and lets the equalizer and analyser see one
 //! continuous signal.
 
-use std::fs::File;
-use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 
-use rodio::{cpal, Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, Source};
+use rodio::{cpal, DeviceSinkBuilder, MixerDeviceSink, Player, Source};
 
-use super::engine::{to_output_format, EngineShared, PlaybackSource, Prepared};
+use super::engine::{open_decoder, to_output_format, EngineShared, PlaybackSource, Prepared, TrackUpdate};
 use super::eq::EqSettings;
+use super::loudness::Audible;
 use super::spectrum::{SpectrumAnalyzer, BAND_COUNT};
-use super::{AudioBackend, AudioError, LoadedTrack, OutputDevice, Transition};
+use super::{AudioBackend, AudioError, LoadedTrack, OutputDevice, TrackRequest, Transition};
 
 const SEEK_TIMEOUT: Duration = Duration::from_millis(1500);
 /// How often to check whether the system default output changed (when following it).
 const DEFAULT_DEVICE_POLL: Duration = Duration::from_secs(3);
+/// Leading silence shorter than this is kept; longer is skipped (up to the maximum)
+/// when crossfading into a track.
+const MIN_LEAD_IN: f64 = 0.05;
+const MAX_LEAD_IN: f64 = 10.0;
 
 struct Output {
     _sink: MixerDeviceSink,
@@ -38,7 +41,20 @@ struct Output {
 struct Queued {
     path: PathBuf,
     token: u64,
+    gain: f32,
+    audible: Option<Audible>,
     duration: Option<Duration>,
+    crossfade: bool,
+}
+
+impl Queued {
+    fn new(track: TrackRequest<'_>, duration: Option<Duration>, crossfade: bool) -> Self {
+        Self { path: track.path.to_path_buf(), token: track.token, gain: track.gain, audible: track.audible, duration, crossfade }
+    }
+
+    fn request(&self) -> TrackRequest<'_> {
+        TrackRequest { path: &self.path, token: self.token, gain: self.gain, audible: self.audible }
+    }
 }
 
 pub struct RodioBackend {
@@ -131,28 +147,28 @@ impl RodioBackend {
     }
 
     /// Decode and convert a file for the open output.
-    fn prepare(&mut self, path: &Path, token: u64) -> Result<(Prepared, Option<Duration>), AudioError> {
+    fn prepare(&mut self, track: TrackRequest<'_>, crossfade: bool) -> Result<(Prepared, Option<Duration>), AudioError> {
+        let path = track.path;
         let (channels, sample_rate) = {
             let out = self.ensure_output()?;
             (out.channels, out.sample_rate)
         };
-        let file = File::open(path)?;
-        let byte_len = file.metadata().map(|m| m.len()).ok();
-        let mut builder = Decoder::builder()
-            .with_data(BufReader::new(file))
-            .with_seekable(true)
-            // Trims encoder delay/padding (LAME, iTunSMPB) so albums join without a gap.
-            .with_gapless(true);
-        if let Some(len) = byte_len {
-            builder = builder.with_byte_len(len);
-        }
-        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-            builder = builder.with_hint(ext);
-        }
-        let decoder = builder.build().map_err(|e| AudioError::Decode(e.to_string()))?;
+        let decoder = open_decoder(path)?;
         let duration = decoder.total_duration();
-        let source = to_output_format(decoder, channels, sample_rate);
-        Ok((Prepared { source, token }, duration))
+        let rate = sample_rate.get() as f64;
+        let frames = duration.map(|d| (d.as_secs_f64() * rate).round() as u64);
+        let mut source = to_output_format(decoder, channels, sample_rate);
+        let audible_end = track.audible.map(|a| (a.end * rate).round() as u64);
+        // Blending in starts where the sound starts, not with the file's leading silence.
+        let mut start_frame = 0;
+        if let Some(lead) = track.audible.map(|a| a.start.min(MAX_LEAD_IN)).filter(|&s| crossfade && s >= MIN_LEAD_IN) {
+            match source.try_seek(Duration::from_secs_f64(lead)) {
+                Ok(()) => start_frame = (lead * rate).round() as u64,
+                Err(e) => log::debug!("could not skip the lead-in of {}: {e}", path.display()),
+            }
+        }
+        let prepared = Prepared { source, token: track.token, gain: track.gain, frames, audible_end, start_frame, crossfade };
+        Ok((prepared, duration))
     }
 
     /// Reopen the output (device switch or failure) and continue where we were.
@@ -163,7 +179,7 @@ impl RodioBackend {
         self.output = None;
         self.open_output()?;
         if let Some(cur) = current {
-            match self.prepare(&cur.path, cur.token) {
+            match self.prepare(cur.request(), false) {
                 Ok((prepared, _)) => {
                     self.shared.replace(prepared);
                     if resume_at > Duration::ZERO {
@@ -177,7 +193,7 @@ impl RodioBackend {
             }
         }
         if let Some(n) = next {
-            self.set_next(Some((n.path.as_path(), n.token)));
+            self.set_next(Some(n.request()), n.crossfade);
         }
         Ok(())
     }
@@ -200,15 +216,15 @@ impl Default for RodioBackend {
 }
 
 impl AudioBackend for RodioBackend {
-    fn load(&mut self, path: &Path, token: u64, paused: bool) -> Result<LoadedTrack, AudioError> {
+    fn load(&mut self, track: TrackRequest<'_>, paused: bool) -> Result<LoadedTrack, AudioError> {
         // Stop the previous track first so a failed load never leaves it playing.
         self.shared.clear();
         self.current = None;
         self.next = None;
         self.paused = paused;
-        let (prepared, duration) = self.prepare(path, token)?;
+        let (prepared, duration) = self.prepare(track, false)?;
         self.shared.replace(prepared);
-        self.current = Some(Queued { path: path.to_path_buf(), token, duration });
+        self.current = Some(Queued::new(track, duration, false));
         if let Some(out) = &self.output {
             if paused {
                 out.player.pause();
@@ -219,20 +235,25 @@ impl AudioBackend for RodioBackend {
         Ok(LoadedTrack { duration })
     }
 
-    fn set_next(&mut self, next: Option<(&Path, u64)>) {
-        let unchanged = match (&self.next, next) {
-            (None, None) => true,
-            (Some(q), Some((path, token))) => q.path == path && q.token == token,
-            _ => false,
-        };
-        if unchanged {
+    fn set_next(&mut self, next: Option<TrackRequest<'_>>, crossfade: bool) {
+        if let (Some(queued), Some(track)) = (self.next.as_ref(), next) {
+            // Same track, joined the same way: at most its gain changed. (A different join or
+            // audible range changes where the prepared source starts, so it is prepared again.)
+            if queued.path == track.path && queued.token == track.token && queued.crossfade == crossfade && queued.audible == track.audible {
+                if queued.gain != track.gain {
+                    self.update_track(track.token, track.gain, track.audible);
+                }
+                return;
+            }
+        }
+        if next.is_none() && self.next.is_none() {
             return;
         }
-        let prepared = next.and_then(|(path, token)| match self.prepare(path, token) {
-            Ok((prepared, duration)) => Some((prepared, Queued { path: path.to_path_buf(), token, duration })),
+        let prepared = next.and_then(|track| match self.prepare(track, crossfade) {
+            Ok((prepared, duration)) => Some((prepared, Queued::new(track, duration, crossfade))),
             Err(e) => {
                 // The natural end-of-track path will report it when it is actually reached.
-                log::warn!("could not prepare next track {}: {e}", path.display());
+                log::warn!("could not prepare next track {}: {e}", track.path.display());
                 None
             }
         });
@@ -260,6 +281,20 @@ impl AudioBackend for RodioBackend {
             self.current = self.next.take();
         }
         Some(Transition { token, duration: self.current.as_ref().and_then(|c| c.duration) })
+    }
+
+    fn update_track(&mut self, token: u64, gain: f32, audible: Option<Audible>) {
+        for queued in self.current.iter_mut().chain(self.next.iter_mut()).filter(|q| q.token == token) {
+            queued.gain = gain;
+            queued.audible = audible.or(queued.audible);
+        }
+        let rate = self.output.as_ref().map_or(48_000, |o| o.sample_rate.get()) as f64;
+        let audible_end = audible.map(|a| (a.end * rate).round() as u64);
+        self.shared.update_track(TrackUpdate { token, gain, audible_end });
+    }
+
+    fn set_crossfade(&mut self, duration: Duration) {
+        self.shared.set_crossfade(duration);
     }
 
     fn play(&mut self) {

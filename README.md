@@ -9,7 +9,9 @@ is tracked.
 ## Highlights
 
 * **Real playback engine** in Rust (rodio + symphonia) on its own thread:
-  **gapless playback**, a **10-band equalizer** with presets, **output device
+  **gapless playback**, **volume levelling** (ReplayGain tags or an on-device
+  EBU R128 measurement, per song or per album), optional **crossfade** that skips
+  the silence between songs, a **10-band equalizer** with presets, **output device
   selection** that follows Windows when you plug in headphones, race-free state
   transitions, an editable queue, error recovery and session resume.
 * **Live spectrum visualizer** computed by FFT from the samples actually being
@@ -72,7 +74,7 @@ src/                 React + TypeScript frontend
 src-tauri/           Rust backend
   src/domain/        queue rules, models (pure, unit-tested)
   src/application/   player & library services
-  src/audio/         AudioBackend trait, rodio backend, sample tap, FFT
+  src/audio/         AudioBackend trait, playback stream, EQ, loudness, FFT
   src/library/       path identity, scanner
   src/metadata/      tags, artwork, accent colours
   src/database/      SQLite migrations & repositories

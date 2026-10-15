@@ -5,6 +5,7 @@ import { cn } from "@/utils/cn";
 
 interface SliderProps {
   value: number;
+  min?: number;
   max: number;
   step?: number;
   label: string;
@@ -19,6 +20,8 @@ interface SliderProps {
   size?: "sm" | "md" | "lg";
   /** Floating label shown above the thumb while dragging. */
   renderBubble?: (value: number) => ReactNode;
+  /** Keep the thumb visible at rest (settings sliders); playback sliders reveal it on hover. */
+  showThumb?: boolean;
 }
 
 const heights = { sm: "h-1", md: "h-1", lg: "h-1.5" } as const;
@@ -27,17 +30,18 @@ const heights = { sm: "h-1", md: "h-1", lg: "h-1.5" } as const;
  * Track + fill + thumb. The thumb appears on hover/focus/drag only, keeping the bar
  * calm at rest; the fill brightens to the accent while interacting.
  */
-export function Slider({ value, max, step = 1, label, valueText, disabled, onChange, onCommit, className, size = "md", renderBubble }: SliderProps) {
+export function Slider({ value, min = 0, max, step = 1, label, valueText, disabled, onChange, onCommit, className, size = "md", renderBubble, showThumb }: SliderProps) {
   const [dragging, setDragging] = useState(false);
   const [dragValue, setDragValue] = useState(value);
   const shown = dragging ? dragValue : value;
-  const safeMax = max > 0 ? max : 1;
+  const safeMax = max > min ? max : min + 1;
 
   return (
     <RadixSlider.Root
       dir="ltr"
       className={cn("group relative flex h-5 w-full touch-none items-center select-none", disabled && "opacity-40", className)}
-      value={[Math.min(shown, safeMax)]}
+      value={[Math.max(min, Math.min(shown, safeMax))]}
+      min={min}
       max={safeMax}
       step={step}
       disabled={disabled}
@@ -66,7 +70,8 @@ export function Slider({ value, max, step = 1, label, valueText, disabled, onCha
         aria-valuetext={valueText}
         className={cn(
           "relative block size-3 rounded-full bg-ink shadow-[0_2px_6px_rgb(0_0_0/0.5)]",
-          "scale-0 transition-transform duration-(--duration-micro) ease-(--ease-out)",
+          showThumb ? "scale-100" : "scale-0",
+          "transition-transform duration-(--duration-micro) ease-(--ease-out)",
           "group-hover:scale-100 focus-visible:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-soft",
           dragging && "scale-110",
         )}

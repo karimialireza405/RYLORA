@@ -10,6 +10,7 @@ pub const PLAYER_ERROR: &str = "player://error";
 pub const LIBRARY_SCAN_PROGRESS: &str = "library://scan-progress";
 pub const LIBRARY_SCAN_FINISHED: &str = "library://scan-finished";
 pub const LIBRARY_CHANGED: &str = "library://changed";
+pub const AUDIO_LOUDNESS: &str = "audio://loudness";
 
 pub fn emit<T: Serialize + Clone>(app: &AppHandle, event: &str, payload: T) {
     if let Err(e) = app.emit(event, payload) {

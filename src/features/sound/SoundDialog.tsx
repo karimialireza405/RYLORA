@@ -1,8 +1,9 @@
 import * as RadixSlider from "@radix-ui/react-slider";
 import { Check, ChevronDown, RotateCcw, Speaker } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Switch } from "@/components/ui/Controls";
+import { Segmented, Switch } from "@/components/ui/Controls";
 import { Dialog } from "@/components/ui/Dialog";
 import { DropdownMenuButton, type MenuEntry } from "@/components/ui/Menu";
 import { useT } from "@/i18n";
@@ -19,6 +20,7 @@ import {
 } from "@/stores/audio";
 import { cn } from "@/utils/cn";
 import { formatNumber } from "@/utils/format";
+import { PlaybackOptions } from "./PlaybackOptions";
 
 function bandLabel(hz: number): string {
   return hz >= 1000 ? `${formatNumber(hz / 1000)}K` : formatNumber(hz);
@@ -29,10 +31,13 @@ function formatDb(db: number): string {
   return `${v > 0 ? "+" : ""}${formatNumber(v)}`;
 }
 
-/** Output device and equalizer, reachable from the playback bar and Settings. */
+type SoundTab = "equalizer" | "playback";
+
+/** Output device, equalizer, levelling and crossfade; reachable from the playback bar and Settings. */
 export function SoundDialog() {
   const t = useT();
   const open = useAudio((s) => s.open);
+  const [tab, setTab] = useState<SoundTab>("equalizer");
   return (
     <Dialog
       open={open}
@@ -40,9 +45,21 @@ export function SoundDialog() {
       title={t.sound.title}
       className="w-[min(680px,calc(100vw-48px))]"
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         <OutputDevicePicker />
-        <Equalizer />
+        <div className="border-t border-line pt-1">
+          <Segmented<SoundTab>
+            variant="line"
+            label={t.sound.title}
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "equalizer", label: t.sound.tabEqualizer },
+              { value: "playback", label: t.sound.tabPlayback },
+            ]}
+          />
+        </div>
+        {tab === "equalizer" ? <Equalizer /> : <PlaybackOptions />}
       </div>
     </Dialog>
   );
@@ -104,7 +121,7 @@ function Equalizer() {
     }));
 
   return (
-    <section aria-label={t.sound.equalizer} className="border-t border-line pt-2">
+    <section aria-label={t.sound.equalizer}>
       <Switch label={t.sound.enabled} description={t.sound.equalizerHint} checked={eq.enabled} onChange={(enabled) => updateEqualizer({ enabled })} />
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">

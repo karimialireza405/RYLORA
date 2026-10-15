@@ -100,6 +100,8 @@ pub fn run() {
             commands::player::audio_settings,
             commands::player::audio_set_equalizer,
             commands::player::audio_set_output_device,
+            commands::player::audio_set_leveling,
+            commands::player::audio_set_crossfade,
             commands::library::library_snapshot,
             commands::library::library_folders,
             commands::library::library_add_folder,

@@ -56,6 +56,23 @@ and renders the snapshot the backend emits.
     62 Hz–8 kHz, high shelf 16 kHz, ±12 dB) plus preamp, with a soft limiter above
     0.9 FS. Settings reach the audio thread through a versioned `EqControl`; a flat
     or disabled EQ is bit-transparent. Persisted under the `equalizer` setting.
+  * **Volume levelling** (`audio/loudness.rs`, `application/loudness.rs`): a
+    background worker decodes each file once with its own database connection,
+    measuring integrated loudness (EBU R128 / BS.1770 via `ebur128`), sample peak
+    and where the sound starts and ends (-50 dBFS). ReplayGain tags, when present,
+    take precedence for loudness. Results live in `track_loudness`, keyed to the
+    file's size and mtime so edits trigger a re-measurement; failures are retried
+    once per launch. The player asks for the current and next song first. Gain =
+    target − loudness, capped so the peak stays ≤ 0 dBFS and to −30…+15 dB; album
+    mode uses album tags or the duration-weighted energy mean of the album's songs.
+    Each track carries its own gain inside the stream; changes glide over ~50 ms.
+  * **Crossfade:** when the prepared song asks for it, the stream starts it
+    early and mixes both with equal-power curves (cos/sin). The fade is timed to
+    end where the outgoing song's sound ends (its trailing silence is dropped) and
+    the incoming song is pre-seeked past its leading silence; the fade never takes
+    more than half of either song. The queue switches when the fade starts; the
+    mix is soft-limited above 0.9. The player decides per pair: off for repeat-one
+    and, by default, for consecutive songs of the same album (track/disc order).
   * **Spectrum:** the stream copies a mono downmix of what is heard (after EQ,
     before volume) into the analyser ring. A 2048-point FFT at ~30 Hz drives the
     visualizer, seek ribbon and cover pulse, only while something displays them.
@@ -85,7 +102,7 @@ and renders the snapshot the backend emits.
 * The `AudioBackend` trait still allows libmpv or a direct symphonia → cpal
   pipeline later (e.g. for bit-perfect/exclusive output).
 
-Not claimed: bit-perfect/exclusive (WASAPI exclusive) output, ReplayGain, crossfade.
+Not claimed: bit-perfect/exclusive (WASAPI exclusive) output.
 
 ## Library indexing
 
@@ -116,9 +133,14 @@ Not claimed: bit-perfect/exclusive (WASAPI exclusive) output, ReplayGain, crossf
 
 ## Tests
 
-* Rust (`cargo test`, 34 tests): queue/shuffle/repeat rules, FFT and band mapping,
-  path identity, accent contrast, migrations, repositories (identity, playlists,
-  cascades, compilations, missing files), metadata fallbacks.
-* Frontend (`npm test`, 24 tests): formatting, RTL detection, sorting, search ranking,
-  personal music import, duplicate handling and refresh/scan completion.
+* Rust (`cargo test`, 72 tests): queue/shuffle/repeat rules, the playback stream
+  (gapless switch, format conversion, seek, EQ, levelling gain ramps, crossfade
+  timing/curves/silence skipping), EQ filter responses, loudness measurement
+  against the BS.1770 reference tone, ReplayGain tag parsing, gain/peak rules,
+  FFT and band mapping, path identity, accent contrast, migrations, repositories
+  (identity, playlists, cascades, compilations, missing files, loudness validity),
+  metadata fallbacks.
+* Frontend (`npm test`, 36 tests): formatting, RTL detection, sorting, search ranking,
+  personal music import, duplicate handling, refresh/scan completion, EQ presets,
+  levelling/crossfade settings.
 * End-to-end checks against the real app (see `docs/development/setup.md`).

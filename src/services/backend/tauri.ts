@@ -43,6 +43,8 @@ export function createTauriBackend(): Backend {
       settings: () => invoke("audio_settings"),
       setEqualizer: (settings) => invoke("audio_set_equalizer", { settings }),
       setOutputDevice: (id) => invoke("audio_set_output_device", { id }),
+      setLeveling: (settings) => invoke("audio_set_leveling", { settings }),
+      setCrossfade: (settings) => invoke("audio_set_crossfade", { settings }),
     },
 
     library: {

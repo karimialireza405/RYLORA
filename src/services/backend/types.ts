@@ -1,6 +1,9 @@
 import type {
   AudioSettings,
+  CrossfadeSettings,
   EqSettings,
+  LevelingSettings,
+  LoudnessProgress,
   HistoryEntry,
   ImportResult,
   LibraryFolder,
@@ -28,6 +31,7 @@ export interface BackendEvents {
   "library://scan-progress": ScanProgress;
   "library://scan-finished": ScanSummary;
   "library://changed": null;
+  "audio://loudness": LoudnessProgress;
 }
 
 export type Unlisten = () => void;
@@ -69,6 +73,8 @@ export interface Backend {
     setEqualizer(settings: EqSettings): Promise<void>;
     /** null follows the system default output. */
     setOutputDevice(id: string | null): Promise<void>;
+    setLeveling(settings: LevelingSettings): Promise<void>;
+    setCrossfade(settings: CrossfadeSettings): Promise<void>;
   };
 
   library: {

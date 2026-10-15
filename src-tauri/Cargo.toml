@@ -33,6 +33,7 @@ rusqlite_migration = "2.6"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "bmp", "gif"] }
 blake3 = "1.8"
 walkdir = "2.5"
+ebur128 = "0.1.10"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

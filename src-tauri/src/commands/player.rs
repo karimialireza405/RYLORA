@@ -1,8 +1,9 @@
 use tauri::State;
 
 use super::{validate_ids, AppState};
-use crate::application::player::{AudioSettings, PlayerCommand, PlayerSnapshot};
+use crate::application::player::{AudioSettings, CrossfadeSettings, PlayerCommand, PlayerSnapshot};
 use crate::audio::eq::EqSettings;
+use crate::audio::loudness::LevelingSettings;
 use crate::domain::models::{RepeatMode, TrackId};
 use crate::error::{AppError, AppResult};
 
@@ -131,5 +132,20 @@ pub fn audio_set_output_device(state: State<'_, AppState>, id: Option<String>) -
         return Err(AppError::Invalid("Invalid output device.".into()));
     }
     state.player.send(PlayerCommand::SetOutputDevice(id));
+    Ok(())
+}
+
+#[tauri::command]
+pub fn audio_set_leveling(state: State<'_, AppState>, settings: LevelingSettings) -> AppResult<()> {
+    state.player.send(PlayerCommand::SetLeveling(settings));
+    Ok(())
+}
+
+#[tauri::command]
+pub fn audio_set_crossfade(state: State<'_, AppState>, settings: CrossfadeSettings) -> AppResult<()> {
+    if !settings.seconds.is_finite() {
+        return Err(AppError::Invalid("Crossfade length must be a number.".into()));
+    }
+    state.player.send(PlayerCommand::SetCrossfade(settings.sanitized()));
     Ok(())
 }

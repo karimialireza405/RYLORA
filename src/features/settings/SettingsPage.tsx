@@ -22,6 +22,7 @@ import { useLibrary } from "@/stores/library";
 import { prefEnabled, setPreference, useUi } from "@/stores/ui";
 import { usePreferredLanguage, useT } from "@/i18n";
 import { ShortcutsTable } from "./ShortcutsDialog";
+import { PlaybackOptions } from "@/features/sound/PlaybackOptions";
 import { OutputDevicePicker } from "@/features/sound/SoundDialog";
 import { loadAudioSettings, openSound } from "@/stores/audio";
 
@@ -196,6 +197,9 @@ export function SettingsPage() {
 
       <Section title={t.sound.title}>
         <OutputDevicePicker />
+        <div className="mt-5 border-t border-line pt-5">
+          <PlaybackOptions />
+        </div>
         <Row label={t.sound.gapless}>{t.sound.gaplessHint}</Row>
         <div className="flex items-center justify-between gap-6 py-3">
           <div className="min-w-0">

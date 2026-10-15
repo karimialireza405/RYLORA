@@ -11,9 +11,11 @@ use crossbeam_channel::{never, select, tick, unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
+use super::loudness::{LoudnessProgress, LoudnessWorker};
 use crate::audio::eq::EqSettings;
+use crate::audio::loudness::{self as levels, Audible, LevelingMode, LevelingSettings};
 use crate::audio::rodio_backend::RodioBackend;
-use crate::audio::{AudioBackend, OutputDevice, Transition};
+use crate::audio::{AudioBackend, OutputDevice, TrackRequest, Transition};
 use crate::database::{repo, Db};
 use crate::domain::models::{PlaybackStatus, RepeatMode, Track, TrackId};
 use crate::domain::queue::{Advance, PlayQueue, QueueEntry};
@@ -28,6 +30,9 @@ const RESTART_THRESHOLD_MS: u64 = 3_000;
 const SESSION_KEY: &str = "session";
 const EQUALIZER_KEY: &str = "equalizer";
 const OUTPUT_DEVICE_KEY: &str = "outputDevice";
+const LEVELING_KEY: &str = "leveling";
+const CROSSFADE_KEY: &str = "crossfade";
+const CROSSFADE_MAX_SECS: f32 = 12.0;
 
 /// OS media integration (media keys, system flyout). Implemented per platform in
 /// `crate::system`; the player pushes every state change to it.
@@ -68,6 +73,10 @@ pub enum PlayerCommand {
     SetEqualizer(EqSettings),
     /// `None` follows the system default output.
     SetOutputDevice(Option<String>),
+    SetLeveling(LevelingSettings),
+    SetCrossfade(CrossfadeSettings),
+    /// The loudness worker stored a measurement for this track.
+    LoudnessMeasured(TrackId),
     AudioSettings(Sender<AudioSettings>),
     Snapshot(Sender<PlayerSnapshot>),
     Shutdown(Sender<()>),
@@ -89,6 +98,37 @@ pub struct PlayerSnapshot {
     pub repeat: RepeatMode,
 }
 
+/// How consecutive tracks join.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct CrossfadeSettings {
+    pub enabled: bool,
+    pub seconds: f32,
+    /// Consecutive tracks of an album stay gapless (live albums, DJ mixes, classical).
+    pub keep_albums_gapless: bool,
+}
+
+impl Default for CrossfadeSettings {
+    fn default() -> Self {
+        Self { enabled: false, seconds: 6.0, keep_albums_gapless: true }
+    }
+}
+
+impl CrossfadeSettings {
+    pub fn sanitized(self) -> Self {
+        let seconds = if self.seconds.is_finite() { self.seconds } else { 6.0 };
+        Self { seconds: (seconds * 2.0).round().clamp(2.0, CROSSFADE_MAX_SECS * 2.0) / 2.0, ..self }
+    }
+
+    fn duration(self) -> Duration {
+        if self.enabled {
+            Duration::from_secs_f32(self.seconds)
+        } else {
+            Duration::ZERO
+        }
+    }
+}
+
 /// Sound settings shown in the UI.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -97,6 +137,28 @@ pub struct AudioSettings {
     /// Chosen device id, or `None` when following the system default.
     pub output_device: Option<String>,
     pub devices: Vec<OutputDevice>,
+    pub leveling: LevelingSettings,
+    pub crossfade: CrossfadeSettings,
+    pub loudness: LoudnessProgress,
+}
+
+/// What playback needs from a track's measurement.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct TrackParams {
+    /// Linear levelling gain.
+    gain: f32,
+    audible: Option<Audible>,
+}
+
+/// Whether `next` continues `current` on the same album (next track number, or the
+/// first track of the next disc).
+fn continues_album(current: &Track, next: &Track) -> bool {
+    if current.album_id != next.album_id {
+        return false;
+    }
+    let (Some(a), Some(b)) = (current.track_number, next.track_number) else { return false };
+    let (disc_a, disc_b) = (current.disc_number.unwrap_or(1), next.disc_number.unwrap_or(1));
+    (disc_a == disc_b && b == a + 1) || (disc_b == disc_a + 1 && b == 1)
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -160,16 +222,18 @@ impl PlayerHandle {
 
 pub fn spawn(app: AppHandle, db: Db, artwork_dir: PathBuf) -> PlayerHandle {
     let (tx, rx) = unbounded();
+    let handle = PlayerHandle { tx };
+    let loudness = LoudnessWorker::spawn(app.clone(), db.clone(), handle.clone());
     std::thread::Builder::new()
         .name("rylora-player".into())
         .spawn(move || {
-            let mut player = Player::new(app, db, artwork_dir, RodioBackend::new());
+            let mut player = Player::new(app, db, artwork_dir, RodioBackend::new(), loudness);
             player.restore_audio_settings();
             player.restore_session();
             player.run(rx);
         })
         .expect("failed to spawn player thread");
-    PlayerHandle { tx }
+    handle
 }
 
 struct Player<B: AudioBackend> {
@@ -178,6 +242,14 @@ struct Player<B: AudioBackend> {
     artwork_dir: PathBuf,
     media: Option<Box<dyn MediaSession>>,
     output_device: Option<String>,
+    leveling: LevelingSettings,
+    crossfade: CrossfadeSettings,
+    loudness: LoudnessWorker,
+    /// Levelling gain and audible range per measured track; cleared whenever a
+    /// measurement or setting changes.
+    params: HashMap<TrackId, TrackParams>,
+    /// Tracks already sent to the loudness worker as urgent.
+    prioritized: Vec<TrackId>,
     backend: B,
     queue: PlayQueue,
     rng: SplitMix64,
@@ -194,13 +266,18 @@ struct Player<B: AudioBackend> {
 }
 
 impl<B: AudioBackend> Player<B> {
-    fn new(app: AppHandle, db: Db, artwork_dir: PathBuf, backend: B) -> Self {
+    fn new(app: AppHandle, db: Db, artwork_dir: PathBuf, backend: B, loudness: LoudnessWorker) -> Self {
         Self {
             app,
             db,
             artwork_dir,
             media: None,
             output_device: None,
+            leveling: LevelingSettings::default(),
+            crossfade: CrossfadeSettings::default(),
+            loudness,
+            params: HashMap::new(),
+            prioritized: Vec::new(),
             backend,
             queue: PlayQueue::new(),
             rng: SplitMix64::from_time(),
@@ -224,6 +301,7 @@ impl<B: AudioBackend> Player<B> {
             select! {
                 recv(rx) -> msg => match msg {
                     Ok(PlayerCommand::Shutdown(done)) => {
+                        self.loudness.stop();
                         self.save_session();
                         self.backend.stop();
                         self.media = None;
@@ -349,11 +427,34 @@ impl<B: AudioBackend> Player<B> {
                     self.report_error(e.to_string(), None);
                 }
             }
+            PlayerCommand::SetLeveling(settings) => {
+                self.leveling = settings;
+                self.persist(LEVELING_KEY, &serde_json::to_string(&settings).unwrap_or_default());
+                self.update_measuring();
+                self.prioritized.clear();
+                self.refresh_params();
+            }
+            PlayerCommand::SetCrossfade(settings) => {
+                let settings = settings.sanitized();
+                self.crossfade = settings;
+                self.persist(CROSSFADE_KEY, &serde_json::to_string(&settings).unwrap_or_default());
+                self.backend.set_crossfade(settings.duration());
+                self.update_measuring();
+                self.sync_next();
+            }
+            PlayerCommand::LoudnessMeasured(id) => {
+                self.prioritized.retain(|&p| p != id);
+                self.refresh_params();
+            }
             PlayerCommand::AudioSettings(reply) => {
+                let (measured, total) = repo::loudness_progress(&self.db.conn()).unwrap_or_default();
                 let _ = reply.send(AudioSettings {
                     equalizer: self.backend.equalizer(),
                     output_device: self.output_device.clone(),
                     devices: self.backend.output_devices(),
+                    leveling: self.leveling,
+                    crossfade: self.crossfade,
+                    loudness: LoudnessProgress { measured, total },
                 });
             }
             PlayerCommand::Snapshot(reply) => {
@@ -473,9 +574,11 @@ impl<B: AudioBackend> Player<B> {
         }
         self.status = PlaybackStatus::Loading;
         self.apply_gain();
+        let TrackParams { gain, audible } = self.track_params(&track);
+        let request = TrackRequest { path: Path::new(&track.path), token: entry.uid, gain, audible };
         let loaded = self
             .backend
-            .load(Path::new(&track.path), entry.uid, !autoplay)
+            .load(request, !autoplay)
             .map_err(|e| format!("Can't play \"{}\": {e}", track.title))?;
 
         self.duration_ms = loaded.duration.map(|d| d.as_millis() as u64).unwrap_or(track.duration_ms);
@@ -542,16 +645,85 @@ impl<B: AudioBackend> Player<B> {
         self.emit_progress(self.position_ms());
     }
 
-    /// Keep the backend's prepared next track in step with the queue (gapless playback).
+    /// Keep the backend's prepared next track in step with the queue (gapless playback
+    /// or crossfade).
     fn sync_next(&mut self) {
         if !self.backend.is_loaded() {
             return;
         }
-        let next = self
-            .queue
-            .peek_next(Advance::TrackEnded)
-            .and_then(|entry| self.track(entry.track_id).filter(|t| !t.missing).map(|t| (t.path, entry.uid)));
-        self.backend.set_next(next.as_ref().map(|(path, uid)| (Path::new(path.as_str()), *uid)));
+        let current = self.queue.current();
+        let next = self.queue.peek_next(Advance::TrackEnded).and_then(|entry| {
+            self.track(entry.track_id).filter(|t| !t.missing).map(|t| (t, entry.uid))
+        });
+        let Some((track, uid)) = next else {
+            self.backend.set_next(None, false);
+            return;
+        };
+        let current_track = current.and_then(|c| self.track(c.track_id));
+        let crossfade = self.crossfade.enabled
+            && current.is_some_and(|c| c.uid != uid)
+            && !(self.crossfade.keep_albums_gapless && current_track.as_ref().is_some_and(|c| continues_album(c, &track)));
+        let TrackParams { gain, audible } = self.track_params(&track);
+        self.backend.set_next(Some(TrackRequest { path: Path::new(&track.path), token: uid, gain, audible }), crossfade);
+    }
+
+    /// The measurement worker runs while either feature needs its results.
+    fn update_measuring(&mut self) {
+        self.loudness.set_enabled(self.leveling.mode != LevelingMode::Off || self.crossfade.enabled);
+    }
+
+    /// Levelling gain and audible range for a track. Unmeasured tracks are queued for
+    /// measurement and meanwhile use the library's typical level.
+    fn track_params(&mut self, track: &Track) -> TrackParams {
+        if let Some(&params) = self.params.get(&track.id) {
+            return params;
+        }
+        let conn = self.db.conn();
+        let stored = repo::track_loudness(&conn, track.id).unwrap_or_default();
+        let measured = stored.is_some();
+        let loudness = match (self.leveling.mode, stored) {
+            (LevelingMode::Off, _) => None,
+            (LevelingMode::Album, Some(m)) => m
+                .album
+                .or_else(|| {
+                    let parts = repo::album_loudness_parts(&conn, track.album_id).ok().flatten()?;
+                    levels::combined(&parts)
+                })
+                .or(m.track),
+            (LevelingMode::Track, Some(m)) => m.track,
+            // Not measured yet: assume the library's typical level so it does not stand out.
+            (_, None) => repo::typical_loudness(&conn).ok().flatten(),
+        };
+        drop(conn);
+        let measuring = self.leveling.mode != LevelingMode::Off || self.crossfade.enabled;
+        if !measured && measuring && !self.prioritized.contains(&track.id) {
+            self.prioritized.push(track.id);
+            self.loudness.prioritize(track.id);
+        }
+        // Silent or unreadable files are left alone.
+        let db = loudness.map_or(0.0, |l| levels::gain_db(l, self.leveling.target.lufs()));
+        if self.leveling.mode != LevelingMode::Off {
+            log::debug!("levelling \"{}\": {db:+.2} dB ({})", track.title, if measured { "measured" } else { "provisional" });
+        }
+        let params = TrackParams { gain: levels::db_to_linear(db), audible: stored.and_then(|m| m.audible) };
+        // Provisional values are not cached, so the real ones are used once measured.
+        if measured {
+            self.params.insert(track.id, params);
+        }
+        params
+    }
+
+    /// Recompute after a measurement or setting change and apply to the playing and
+    /// prepared tracks (gain changes ramp smoothly, without clicks).
+    fn refresh_params(&mut self) {
+        self.params.clear();
+        if let Some(entry) = self.queue.current() {
+            if let Some(track) = self.track(entry.track_id) {
+                let TrackParams { gain, audible } = self.track_params(&track);
+                self.backend.update_track(entry.uid, gain, audible);
+            }
+        }
+        self.sync_next();
     }
 
     fn persist(&self, key: &str, value: &str) {
@@ -562,6 +734,20 @@ impl<B: AudioBackend> Player<B> {
 
     fn restore_audio_settings(&mut self) {
         let conn = self.db.conn();
+        if let Ok(Some(json)) = repo::get_setting(&conn, LEVELING_KEY) {
+            match serde_json::from_str::<LevelingSettings>(&json) {
+                Ok(settings) => self.leveling = settings,
+                Err(e) => log::warn!("discarding unreadable levelling settings: {e}"),
+            }
+        }
+        if let Ok(Some(json)) = repo::get_setting(&conn, CROSSFADE_KEY) {
+            match serde_json::from_str::<CrossfadeSettings>(&json) {
+                Ok(settings) => self.crossfade = settings.sanitized(),
+                Err(e) => log::warn!("discarding unreadable crossfade settings: {e}"),
+            }
+        }
+        self.backend.set_crossfade(self.crossfade.duration());
+        self.loudness.set_enabled(self.leveling.mode != LevelingMode::Off || self.crossfade.enabled);
         if let Ok(Some(json)) = repo::get_setting(&conn, EQUALIZER_KEY) {
             match serde_json::from_str::<EqSettings>(&json) {
                 Ok(settings) => self.backend.set_equalizer(settings.sanitized()),
@@ -579,6 +765,8 @@ impl<B: AudioBackend> Player<B> {
 
     fn on_library_changed(&mut self) {
         self.tracks.clear();
+        self.params.clear();
+        self.loudness.wake();
         // Drop queue entries whose tracks were removed from the library entirely.
         let queued: Vec<TrackId> = self.queue.entries().iter().map(|e| e.track_id).collect();
         let gone: Vec<TrackId> = queued.into_iter().filter(|&id| self.track(id).is_none()).collect();
@@ -714,5 +902,53 @@ impl<B: AudioBackend> Player<B> {
             self.status = PlaybackStatus::Paused;
         }
         self.session_dirty = false;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn track(album_id: i64, disc: Option<u32>, number: Option<u32>) -> Track {
+        Track {
+            id: 1,
+            path: String::new(),
+            title: String::new(),
+            artist: String::new(),
+            artist_id: 1,
+            album: String::new(),
+            album_id,
+            album_artist: String::new(),
+            track_number: number,
+            disc_number: disc,
+            year: None,
+            genre: None,
+            duration_ms: 0,
+            format: "flac".into(),
+            artwork: None,
+            accent: None,
+            favorite: false,
+            missing: false,
+            added_at: 0,
+        }
+    }
+
+    #[test]
+    fn album_continuity_follows_track_and_disc_numbers() {
+        assert!(continues_album(&track(1, None, Some(3)), &track(1, None, Some(4))));
+        assert!(continues_album(&track(1, Some(1), Some(12)), &track(1, Some(2), Some(1))));
+        assert!(!continues_album(&track(1, None, Some(3)), &track(1, None, Some(7))), "skipping ahead");
+        assert!(!continues_album(&track(1, None, Some(3)), &track(2, None, Some(4))), "another album");
+        assert!(!continues_album(&track(1, None, None), &track(1, None, None)), "no numbers to go by");
+    }
+
+    #[test]
+    fn crossfade_settings_are_bounded() {
+        let s = |seconds| CrossfadeSettings { enabled: true, seconds, keep_albums_gapless: true }.sanitized().seconds;
+        assert_eq!(s(0.0), 1.0);
+        assert_eq!(s(7.3), 7.5);
+        assert_eq!(s(60.0), CROSSFADE_MAX_SECS);
+        assert_eq!(s(f32::NAN), 6.0);
+        assert_eq!(CrossfadeSettings { enabled: false, ..Default::default() }.duration(), Duration::ZERO);
     }
 }

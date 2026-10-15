@@ -7,6 +7,7 @@
 
 pub mod engine;
 pub mod eq;
+pub mod loudness;
 pub mod rodio_backend;
 pub mod spectrum;
 
@@ -16,6 +17,7 @@ use std::time::Duration;
 use serde::Serialize;
 
 use eq::EqSettings;
+use loudness::Audible;
 use spectrum::BAND_COUNT;
 
 #[derive(Debug, thiserror::Error)]
@@ -30,12 +32,24 @@ pub enum AudioError {
     Seek(String),
 }
 
+/// A track to play, as the backend needs it.
+#[derive(Debug, Clone, Copy)]
+pub struct TrackRequest<'a> {
+    pub path: &'a Path,
+    /// Identifies the queue entry; reported back on transitions.
+    pub token: u64,
+    /// Linear loudness-levelling gain.
+    pub gain: f32,
+    /// Where the sound starts and ends, once measured; crossfades skip the silence outside.
+    pub audible: Option<Audible>,
+}
+
 pub struct LoadedTrack {
     /// Duration reported by the decoder, when the container provides one.
     pub duration: Option<Duration>,
 }
 
-/// The prepared next track took over without a gap.
+/// The prepared next track took over (gaplessly or by crossfading into it).
 #[derive(Debug, Clone, Copy)]
 pub struct Transition {
     /// Token the track was prepared with (the queue entry uid).
@@ -54,12 +68,17 @@ pub struct OutputDevice {
 
 pub trait AudioBackend {
     /// Load a file, replacing anything currently playing. Starts paused when `paused` is true.
-    /// `token` identifies the queue entry and is reported back on gapless transitions.
-    fn load(&mut self, path: &Path, token: u64, paused: bool) -> Result<LoadedTrack, AudioError>;
-    /// Prepare (or clear) the track that follows the current one without a gap.
-    fn set_next(&mut self, next: Option<(&Path, u64)>);
-    /// Report a gapless switch to the prepared track since the last call.
+    fn load(&mut self, track: TrackRequest<'_>, paused: bool) -> Result<LoadedTrack, AudioError>;
+    /// Prepare (or clear) the track that follows the current one. It joins without a gap,
+    /// or blends in over the crossfade length when `crossfade` is true.
+    fn set_next(&mut self, next: Option<TrackRequest<'_>>, crossfade: bool);
+    /// Report a switch to the prepared track since the last call.
     fn take_transition(&mut self) -> Option<Transition>;
+    /// Update the levelling gain and audible range of the playing or prepared track
+    /// with `token` (e.g. once its measurement arrives).
+    fn update_track(&mut self, token: u64, gain: f32, audible: Option<Audible>);
+    /// Crossfade length used when the next track asks for one.
+    fn set_crossfade(&mut self, duration: Duration);
     fn play(&mut self);
     fn pause(&mut self);
     /// Unload the current source entirely.

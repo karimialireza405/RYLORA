@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use serde::{Deserialize, Serialize};
 
+use crate::audio::loudness::{Audible, Loudness};
 use crate::domain::models::{
     Album, AlbumId, Artist, ArtistId, Playlist, PlaylistId, Track, TrackId,
 };
@@ -698,6 +699,170 @@ fn renumber_playlist(conn: &Connection, id: PlaylistId) -> AppResult<()> {
     Ok(())
 }
 
+// ---------------------------------------------------------------- loudness
+
+/// A track whose loudness must be (re)measured.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoudnessJob {
+    pub track_id: TrackId,
+    pub path: String,
+    pub file_size: i64,
+    pub file_mtime: i64,
+}
+
+/// What a measurement produced, ready to store.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct LoudnessRecord {
+    pub source: &'static str,
+    pub track: Option<Loudness>,
+    pub album: Option<Loudness>,
+    pub audible: Option<Audible>,
+}
+
+/// A valid stored measurement. Fields are absent for silent or unreadable files.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct StoredLoudness {
+    pub track: Option<Loudness>,
+    /// Only from album ReplayGain tags.
+    pub album: Option<Loudness>,
+    pub audible: Option<Audible>,
+}
+
+/// A stored measurement is valid only for the file version it was taken from.
+const LOUDNESS_VALID: &str = "l.file_size = t.file_size AND l.file_mtime = t.file_mtime";
+
+fn loudness_job_from_row(r: &Row<'_>) -> rusqlite::Result<LoudnessJob> {
+    Ok(LoudnessJob { track_id: r.get(0)?, path: r.get(1)?, file_size: r.get(2)?, file_mtime: r.get(3)? })
+}
+
+fn loudness_pair(lufs: Option<f64>, peak: Option<f64>) -> Option<Loudness> {
+    lufs.map(|lufs| Loudness { lufs, peak: peak.unwrap_or(0.0) })
+}
+
+/// Tracks still to be measured, most recently added first.
+pub fn loudness_jobs(conn: &Connection, limit: u32) -> AppResult<Vec<LoudnessJob>> {
+    let sql = format!(
+        "SELECT t.id, t.path, t.file_size, t.file_mtime FROM tracks t
+         LEFT JOIN track_loudness l ON l.track_id = t.id
+         WHERE t.missing = 0 AND (l.track_id IS NULL OR NOT ({LOUDNESS_VALID}))
+         ORDER BY t.added_at DESC, t.id LIMIT ?1"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map([limit], loudness_job_from_row)?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// Forget failed measurements so they are retried (once per launch): a failure may
+/// have been temporary, or fixed by a newer version of RYLORA.
+pub fn forget_failed_loudness(conn: &Connection) -> AppResult<usize> {
+    Ok(conn.execute("DELETE FROM track_loudness WHERE source = 'failed'", [])?)
+}
+
+/// The job for one track, if it still needs measuring.
+pub fn loudness_job(conn: &Connection, id: TrackId) -> AppResult<Option<LoudnessJob>> {
+    let sql = format!(
+        "SELECT t.id, t.path, t.file_size, t.file_mtime FROM tracks t
+         LEFT JOIN track_loudness l ON l.track_id = t.id
+         WHERE t.id = ?1 AND t.missing = 0 AND (l.track_id IS NULL OR NOT ({LOUDNESS_VALID}))"
+    );
+    Ok(conn.query_row(&sql, [id], loudness_job_from_row).optional()?)
+}
+
+pub fn save_loudness(conn: &Connection, job: &LoudnessJob, record: &LoudnessRecord) -> AppResult<()> {
+    // The track may have been removed while it was being measured.
+    conn.execute(
+        "INSERT INTO track_loudness (track_id, file_size, file_mtime, source, lufs, peak, album_lufs, album_peak,
+                                     audible_start_ms, audible_end_ms, measured_at)
+         SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11 WHERE EXISTS (SELECT 1 FROM tracks WHERE id = ?1)
+         ON CONFLICT(track_id) DO UPDATE SET file_size = excluded.file_size, file_mtime = excluded.file_mtime,
+            source = excluded.source, lufs = excluded.lufs, peak = excluded.peak,
+            album_lufs = excluded.album_lufs, album_peak = excluded.album_peak,
+            audible_start_ms = excluded.audible_start_ms, audible_end_ms = excluded.audible_end_ms,
+            measured_at = excluded.measured_at",
+        params![
+            job.track_id,
+            job.file_size,
+            job.file_mtime,
+            record.source,
+            record.track.map(|l| l.lufs),
+            record.track.map(|l| l.peak),
+            record.album.map(|l| l.lufs),
+            record.album.map(|l| l.peak),
+            record.audible.map(|a| (a.start * 1000.0).round() as i64),
+            record.audible.map(|a| (a.end * 1000.0).round() as i64),
+            now_ms()
+        ],
+    )?;
+    Ok(())
+}
+
+/// Stored measurement for a track, or `None` when it has not been measured yet.
+pub fn track_loudness(conn: &Connection, id: TrackId) -> AppResult<Option<StoredLoudness>> {
+    let sql = format!(
+        "SELECT l.lufs, l.peak, l.album_lufs, l.album_peak, l.audible_start_ms, l.audible_end_ms FROM track_loudness l
+         JOIN tracks t ON t.id = l.track_id WHERE l.track_id = ?1 AND {LOUDNESS_VALID}"
+    );
+    Ok(conn
+        .query_row(&sql, [id], |r| {
+            let bounds: (Option<i64>, Option<i64>) = (r.get(4)?, r.get(5)?);
+            Ok(StoredLoudness {
+                track: loudness_pair(r.get(0)?, r.get(1)?),
+                album: loudness_pair(r.get(2)?, r.get(3)?),
+                audible: match bounds {
+                    (Some(start), Some(end)) if end > start => {
+                        Some(Audible { start: start as f64 / 1000.0, end: end as f64 / 1000.0 })
+                    }
+                    _ => None,
+                },
+            })
+        })
+        .optional()?)
+}
+
+/// Measurements of every available track on an album with their durations, or `None`
+/// while any of them is still unmeasured.
+pub fn album_loudness_parts(conn: &Connection, album_id: AlbumId) -> AppResult<Option<Vec<(Loudness, u64)>>> {
+    let sql = format!(
+        "SELECT l.track_id IS NOT NULL AND {LOUDNESS_VALID}, l.lufs, l.peak, t.duration_ms FROM tracks t
+         LEFT JOIN track_loudness l ON l.track_id = t.id
+         WHERE t.album_id = ?1 AND t.missing = 0"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map([album_id], |r| {
+        Ok((r.get::<_, Option<bool>>(0)?.unwrap_or(false), loudness_pair(r.get(1)?, r.get(2)?), r.get::<_, i64>(3)?))
+    })?;
+    let mut parts = Vec::new();
+    for row in rows {
+        let (valid, loudness, duration) = row?;
+        if !valid {
+            return Ok(None);
+        }
+        if let Some(l) = loudness {
+            parts.push((l, duration.max(0) as u64));
+        }
+    }
+    Ok(Some(parts))
+}
+
+/// (measured, total) over available tracks.
+pub fn loudness_progress(conn: &Connection) -> AppResult<(u32, u32)> {
+    let sql = format!(
+        "SELECT COUNT(l.track_id), COUNT(*) FROM tracks t
+         LEFT JOIN track_loudness l ON l.track_id = t.id AND {LOUDNESS_VALID}
+         WHERE t.missing = 0"
+    );
+    Ok(conn.query_row(&sql, [], |r| Ok((r.get(0)?, r.get(1)?)))?)
+}
+
+/// Median loudness of the measured library, used for tracks not measured yet so
+/// they do not stand out before their own measurement arrives.
+pub fn typical_loudness(conn: &Connection) -> AppResult<Option<Loudness>> {
+    let mut stmt = conn.prepare("SELECT lufs FROM track_loudness WHERE lufs IS NOT NULL ORDER BY lufs")?;
+    let values: Vec<f64> = stmt.query_map([], |r| r.get(0))?.collect::<rusqlite::Result<_>>()?;
+    // Assume a full-scale peak: an unmeasured track is never boosted.
+    Ok(values.get(values.len() / 2).map(|&lufs| Loudness { lufs, peak: 1.0 }))
+}
+
 // ---------------------------------------------------------------- settings
 
 /// Settings key holding the user's preferences as a JSON object of strings.
@@ -991,5 +1156,41 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn loudness_is_tracked_per_file_version() {
+        let db = Db::open_in_memory().unwrap();
+        let conn = db.conn();
+        let (_, ids) = seed(&conn, 3);
+        assert_eq!(loudness_jobs(&conn, 10).unwrap().len(), 3);
+        assert_eq!(loudness_progress(&conn).unwrap(), (0, 3));
+        assert_eq!(album_loudness_parts(&conn, 1).unwrap(), None);
+
+        let l = |lufs| Some(Loudness { lufs, peak: 0.9 });
+        for (i, id) in ids.iter().enumerate() {
+            let job = loudness_job(&conn, *id).unwrap().unwrap();
+            let track = if i == 2 { None } else { l(-10.0 - i as f64) };
+            let audible = Some(Audible { start: 0.25, end: 0.9 });
+            save_loudness(&conn, &job, &LoudnessRecord { source: "analysis", track, album: None, audible }).unwrap();
+        }
+        assert!(loudness_jobs(&conn, 10).unwrap().is_empty());
+        assert_eq!(loudness_progress(&conn).unwrap(), (3, 3));
+        let stored = track_loudness(&conn, ids[1]).unwrap().unwrap();
+        assert_eq!((stored.track, stored.album), (l(-11.0), None));
+        assert_eq!(stored.audible, Some(Audible { start: 0.25, end: 0.9 }));
+        assert_eq!(track_loudness(&conn, ids[2]).unwrap().unwrap().track, None, "silent: measured, no value");
+        // Silent tracks are left out of the album value rather than blocking it.
+        assert_eq!(album_loudness_parts(&conn, 1).unwrap().unwrap().len(), 2);
+        assert_eq!(typical_loudness(&conn).unwrap().unwrap().lufs, -10.0);
+
+        // Editing the file invalidates its measurement.
+        conn.execute("UPDATE tracks SET file_mtime = 99 WHERE id = ?1", [ids[0]]).unwrap();
+        assert_eq!(track_loudness(&conn, ids[0]).unwrap(), None);
+        assert_eq!(loudness_jobs(&conn, 10).unwrap()[0].track_id, ids[0]);
+        assert_eq!(album_loudness_parts(&conn, 1).unwrap(), None);
+        // Missing files are not queued.
+        set_missing(&conn, &ids[..1], true).unwrap();
+        assert!(loudness_jobs(&conn, 10).unwrap().is_empty());
     }
 }

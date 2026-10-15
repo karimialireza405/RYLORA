@@ -157,6 +157,9 @@ export function createPreviewBackend(): Backend {
       { id: "preview-speakers", name: "Speakers (Realtek Audio)", isDefault: true },
       { id: "preview-headphones", name: "Headphones (USB Audio)", isDefault: false },
     ],
+    leveling: { mode: "track", target: "normal" },
+    crossfade: { enabled: false, seconds: 6, keepAlbumsGapless: true },
+    loudness: { measured: 0, total: 0 },
   };
 
   const changed = () => emit("player://state", { ...state, queue: [...state.queue] });
@@ -297,12 +300,22 @@ export function createPreviewBackend(): Backend {
       lyrics: async () => null,
     },
     audio: {
-      settings: async () => ({ ...audio, equalizer: { ...audio.equalizer, gainsDb: [...audio.equalizer.gainsDb] } }),
+      settings: async () => ({
+        ...audio,
+        equalizer: { ...audio.equalizer, gainsDb: [...audio.equalizer.gainsDb] },
+        loudness: { measured: library.tracks.length, total: library.tracks.length },
+      }),
       setEqualizer: async (settings) => {
         audio.equalizer = settings;
       },
       setOutputDevice: async (id) => {
         audio.outputDevice = id;
+      },
+      setLeveling: async (settings) => {
+        audio.leveling = settings;
+      },
+      setCrossfade: async (settings) => {
+        audio.crossfade = settings;
       },
     },
     library: {
