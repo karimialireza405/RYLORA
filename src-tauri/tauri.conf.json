@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "RYLORA",
+  "version": "0.1.0",
+  "identifier": "app.rylora.player",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "RYLORA",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1100,
+        "minHeight": 680,
+        "center": true,
+        "decorations": false,
+        "shadow": true,
+        "visible": true,
+        "backgroundColor": "#080A0F",
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob: artwork: http://artwork.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost; media-src 'self'",
+      "freezePrototype": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "category": "Music",
+    "shortDescription": "Feel Every Note.",
+    "longDescription": "RYLORA is a premium offline-first desktop music player.",
+    "copyright": "© 2026 RYLORA",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+  }
+}

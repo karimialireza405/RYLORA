@@ -1,0 +1,531 @@
+/*
+ * RYLORA design system — tokens.
+ * Every colour, radius, shadow and duration used by components comes from here.
+ * See docs/design-system/overview.md for rationale and contrast measurements.
+ */
+@import "tailwindcss";
+
+@theme {
+  /* ---------------------------------------------------------------- colour */
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-black: #000;
+  --color-white: #fff;
+
+  /* Surfaces, darkest → lightest. */
+  --color-obsidian: #111112;
+  --color-base: #141415;
+  --color-deep: #1a1a1c;
+  --color-raised: #242426;
+  --color-lifted: #303033;
+  --color-line: rgb(255 255 255 / 0.06);
+  --color-line-strong: rgb(255 255 255 / 0.1);
+  --color-veil: rgb(17 17 18 / 0.8);
+
+  /* Verified text contrast: ink-4 is >= 4.54:1 even on lifted.
+     See docs/design-system/overview.md for the complete measured table. */
+  --color-ink: #f5f5f6;
+  --color-ink-2: #c6c6ca;
+  --color-ink-3: #a4a4ac;
+  --color-ink-4: #9797a0;
+
+  /* Silver accents; legacy blue/violet names remain compatibility aliases. */
+  --color-accent: #c1c7d2;
+  --color-accent-soft: #e8ebf0;
+  --color-accent-hover: #f8f9fc;
+  --color-blue: var(--color-accent);
+  --color-blue-soft: var(--color-accent-soft);
+  --color-violet: var(--color-accent);
+  --color-violet-soft: var(--color-accent-soft);
+  --color-danger: #ff6b7a;
+  --color-success: #4fd6a2;
+  --color-warning: #ffc861;
+
+  /* ---------------------------------------------------------------- type */
+  /* Urbanist light throughout the product, Persian Vazirmatn fallback.
+     All fonts are bundled for offline use. */
+  --font-display:
+    "Urbanist Variable", "Vazirmatn Variable", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-caps:
+    "Urbanist Variable", "Vazirmatn Variable", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-sans:
+    "Urbanist Variable", "Vazirmatn Variable", ui-sans-serif, system-ui,
+    "Segoe UI", sans-serif;
+
+  --text-overline: 0.6875rem; /* 11 */
+  --text-overline--line-height: 1rem;
+  --text-overline--letter-spacing: 0.09em;
+  --text-caption: 0.75rem; /* 12 */
+  --text-caption--line-height: 1rem;
+  --text-meta: 0.8125rem; /* 13 */
+  --text-meta--line-height: 1.125rem;
+  --text-body: 0.875rem; /* 14 */
+  --font-weight-normal: 350;
+  --font-weight-medium: 450;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 500;
+  --text-body--line-height: 1.375rem;
+  --text-lead: 0.9375rem; /* 15 */
+  --text-lead--line-height: 1.5rem;
+  --text-title: 1.125rem; /* 18 */
+  --text-title--line-height: 1.5rem;
+  --text-heading: 1.5rem; /* 24 */
+  --text-heading--line-height: 1.4;
+  --text-display: 2rem;
+  --text-display--line-height: 1.4;
+  --text-hero: 2.625rem;
+  --text-hero--line-height: 1.4;
+
+  /* ---------------------------------------------------------------- shape */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 22px;
+
+  /* ---------------------------------------------------------------- elevation */
+  --shadow-card:
+    0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-art:
+    0 18px 40px -18px rgb(0 0 0 / 0.85), 0 2px 6px -2px rgb(0 0 0 / 0.5);
+  --shadow-popover:
+    0 0 0 1px rgb(255 255 255 / 0.08), 0 16px 40px -8px rgb(0 0 0 / 0.7);
+  --shadow-bar: 0 -1px 0 0 rgb(255 255 255 / 0.05);
+  --shadow-transport:
+    0 0 22px -4px color-mix(in srgb, var(--color-accent-soft) 18%, transparent),
+    0 6px 20px -6px rgb(0 0 0 / 0.6);
+  --shadow-accent-line: 0 0 12px color-mix(in srgb, var(--color-accent-soft) 30%, transparent);
+  --shadow-accent-focus: 0 0 18px color-mix(in srgb, var(--color-accent-soft) 20%, transparent);
+
+  /* ---------------------------------------------------------------- motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --duration-micro: 120ms;
+  --duration-standard: 180ms;
+  --duration-emphasis: 260ms;
+}
+
+/* ---------------------------------------------------------------- base */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --sidebar-width: 220px;
+    --titlebar-height: 56px;
+    --playbar-height: 88px;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-obsidian);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-weight: 350;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-feature-settings: "cv11", "ss01";
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  /* Allow selection where it is useful. */
+  input,
+  textarea,
+  .selectable {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  :where(
+    button,
+    [role="button"],
+    a,
+    [role="menuitem"],
+    [role="tab"],
+    [role="option"]
+  ) {
+    cursor: pointer;
+  }
+
+  :where(button:disabled, [aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
+
+  /* One focus treatment for the whole app: visible on keyboard focus only. */
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-blue-soft);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  /* Thin, quiet scrollbars that brighten on hover. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.12) transparent;
+  }
+  *:hover {
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  }
+
+  img {
+    -webkit-user-drag: none;
+  }
+}
+
+@layer utilities {
+  /* Light is concentrated on headings and selected content, not tiny metadata. */
+  .glow {
+    text-shadow:
+      0 0 16px color-mix(in srgb, var(--color-accent-soft) 34%, transparent),
+      0 0 40px color-mix(in srgb, var(--color-accent) 16%, transparent);
+  }
+  /* Display line boxes must fit both Urbanist and Persian fallback descenders. */
+  .glow-room {
+    padding: 0;
+    margin-inline: 0;
+    max-width: 100%;
+  }
+  .glow-soft {
+    text-shadow: 0 0 12px color-mix(in srgb, var(--color-accent-soft) 28%, transparent);
+  }
+  .artwork-glow {
+    box-shadow:
+      0 0 18px color-mix(in srgb, var(--art-tint) 14%, transparent),
+      0 6px 24px rgb(0 0 0 / 0.28);
+    transition:
+      box-shadow 260ms ease,
+      transform 260ms ease;
+  }
+  .group:hover .artwork-glow {
+    box-shadow:
+      0 0 26px color-mix(in srgb, var(--art-tint) 25%, transparent),
+      0 8px 30px rgb(0 0 0 / 0.35);
+  }
+  [data-vinyl-cover]::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: -8% 8% -8% -8%;
+    z-index: -1;
+    background: radial-gradient(
+      ellipse,
+      color-mix(in srgb, var(--art-tint) 28%, transparent),
+      transparent 70%
+    );
+    filter: blur(24px);
+    opacity: 0.8;
+  }
+  [data-vinyl-cover][data-playing="true"]::before {
+    animation: cover-breathe 5s ease-in-out infinite;
+  }
+  h1,
+  h2 {
+    text-shadow: 0 0 20px color-mix(in srgb, var(--color-accent-soft) 20%, transparent);
+  }
+  .text-blue-soft {
+    text-shadow: 0 0 12px color-mix(in srgb, var(--color-accent-soft) 24%, transparent);
+  }
+  /* Quiet labels share the same readable type as the controls. */
+  .caps {
+    font-family: var(--font-caps);
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.015em;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .font-display {
+    font-weight: 300;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+    text-shadow: 0 0 22px color-mix(in srgb, var(--color-accent-soft) 20%, transparent);
+  }
+  .brand-wordmark {
+    font-family: "Urbanist Variable", sans-serif;
+    font-size: 18px;
+    font-weight: 350;
+    letter-spacing: 0.24em;
+    text-shadow: 0 0 18px color-mix(in srgb, var(--color-accent-soft) 40%, transparent);
+  }
+  .home-page {
+    container-type: inline-size;
+    max-width: 1280px;
+    padding: 28px 32px 40px;
+  }
+  .home-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .home-continue {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    align-items: center;
+    gap: 36px;
+    padding: 28px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: linear-gradient(120deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.012));
+  }
+  .home-continue-cover {
+    width: 100%;
+  }
+  .home-continue-title {
+    margin-block: 8px 6px;
+    text-align: left;
+  }
+  .home-records {
+    margin-top: 32px;
+  }
+  .home-shelf-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .home-record-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+  [data-transfer-over="true"] {
+    outline: 2px solid var(--color-blue-soft);
+    outline-offset: -2px;
+    background: var(--color-raised);
+  }
+  .collection-tabs {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid var(--color-line-strong);
+  }
+  .collection-tabs button {
+    padding: 8px 4px 12px;
+    color: var(--color-ink-3);
+    border-bottom: 2px solid transparent;
+    font-weight: 600;
+  }
+  .collection-tabs button:hover {
+    color: var(--color-ink);
+  }
+  .collection-tabs button[aria-current="page"],
+  .collection-tabs button[aria-selected="true"] {
+    color: var(--color-ink);
+    border-bottom-color: var(--color-blue);
+  }
+  .library-toolbar {
+    margin-block: 4px 24px;
+    border-block: 1px solid var(--color-line-strong);
+  }
+  .library-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .library-tabs [role="tablist"] {
+    min-width: max-content;
+  }
+  .library-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+  }
+  .library-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 140px;
+    max-width: 340px;
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgb(255 255 255 / 0.025);
+  }
+  .library-filter:focus-within {
+    box-shadow:
+      0 0 0 1px var(--color-blue),
+      0 0 18px color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+  .library-filter input {
+    width: 100%;
+    min-width: 0;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+  }
+  .library-filter input:focus-visible {
+    outline: none;
+  }
+  .library-filter input::placeholder {
+    color: var(--color-ink-4);
+  }
+  .library-view-tools {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .library-sort select {
+    max-width: 154px;
+    padding: 8px 24px 8px 8px;
+    background: transparent;
+    color: var(--color-ink-2);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .library-sort option {
+    background: var(--color-deep);
+  }
+  .library-layout {
+    display: flex;
+    gap: 4px;
+    padding-left: 12px;
+    border-left: 1px solid var(--color-line-strong);
+  }
+  .library-layout button[aria-pressed="true"] {
+    color: var(--color-blue-soft);
+    background: color-mix(in srgb, var(--color-accent) 9%, transparent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent) 8%, transparent);
+  }
+  @media (max-width: 1160px) {
+    .library-tools {
+      gap: 8px;
+    }
+    .library-view-tools {
+      gap: 8px;
+    }
+    .library-filter {
+      max-width: 250px;
+    }
+  }
+  @container (max-width: 760px) {
+    .home-continue {
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 24px;
+      padding: 24px;
+    }
+    .home-record-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  /* Ellipsis clips on both axes. Give fallback glyphs a full, readable line box. */
+  .truncate {
+    line-height: 1.55;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+/* Reduced motion: honour the OS, and the in-app override (data-motion on <html>). */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="full"]) *,
+  html:not([data-motion="full"]) *::before,
+  html:not([data-motion="full"]) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Slow ambient drift for artwork-derived light in the immersive player. */
+@keyframes ambient-drift {
+  0% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(3%, 4%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+  }
+}
+
+@keyframes cover-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.98);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-2px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+}
