@@ -3,7 +3,7 @@ import { refreshLibrary, useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { notifyError, toast } from "@/stores/toasts";
 import type { Playlist, PlaylistId, TrackId } from "@/types/domain";
-import { plural } from "@/utils/format";
+import { messages } from "@/i18n";
 
 export async function createPlaylist(name: string, trackIds: TrackId[]): Promise<PlaylistId | null> {
   try {
@@ -11,13 +11,13 @@ export async function createPlaylist(name: string, trackIds: TrackId[]): Promise
     await refreshLibrary();
     toast({
       tone: "success",
-      title: `Created “${name.trim()}”`,
-      description: trackIds.length ? `${plural(trackIds.length, "song")} added.` : undefined,
-      action: { label: "Open", run: () => navigate({ name: "playlist", id }) },
+      title: messages().playlists.created(name.trim()),
+      description: trackIds.length ? messages().playlists.songsAdded(trackIds.length) : undefined,
+      action: { label: messages().playlists.open, run: () => navigate({ name: "playlist", id }) },
     });
     return id;
   } catch (e) {
-    notifyError("Couldn't create the playlist", e);
+    notifyError(messages().playlists.createFailed, e);
     return null;
   }
 }
@@ -27,13 +27,13 @@ export async function addToPlaylist(playlist: Playlist, trackIds: TrackId[]): Pr
     await backend().playlists.add(playlist.id, trackIds);
     toast({
       tone: "success",
-      title: `Added to “${playlist.name}”`,
-      description: plural(trackIds.length, "song"),
-      action: { label: "Open", run: () => navigate({ name: "playlist", id: playlist.id }) },
+      title: messages().playlists.addedTo(playlist.name),
+      description: messages().count.songs(trackIds.length),
+      action: { label: messages().playlists.open, run: () => navigate({ name: "playlist", id: playlist.id }) },
     });
     void refreshLibrary();
   } catch (e) {
-    notifyError("Couldn't add to playlist", e);
+    notifyError(messages().playlists.addFailed, e);
   }
 }
 
@@ -43,26 +43,26 @@ export async function renamePlaylist(id: PlaylistId, name: string): Promise<bool
     void refreshLibrary();
     return true;
   } catch (e) {
-    notifyError("Couldn't rename the playlist", e);
+    notifyError(messages().playlists.renameFailed, e);
     return false;
   }
 }
 
 export async function deletePlaylistInteractive(playlist: Playlist): Promise<boolean> {
   const ok = await backend().system.confirm(
-    `Delete “${playlist.name}”? This removes the playlist only — your songs stay in the library.`,
-    "Delete playlist",
-    "Delete",
+    messages().playlists.deleteConfirm(playlist.name),
+    messages().playlists.delete,
+    messages().common.delete,
   );
   if (!ok) return false;
   try {
     await backend().playlists.remove(playlist.id);
     useLibrary.setState((s) => ({ playlists: s.playlists.filter((p) => p.id !== playlist.id) }));
-    toast({ tone: "success", title: `Deleted “${playlist.name}”` });
+    toast({ tone: "success", title: messages().playlists.deleted(playlist.name) });
     void refreshLibrary();
     return true;
   } catch (e) {
-    notifyError("Couldn't delete the playlist", e);
+    notifyError(messages().playlists.deleteFailed, e);
     return false;
   }
 }

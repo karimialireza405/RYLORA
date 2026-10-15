@@ -21,8 +21,10 @@ import { PlaybackBar } from "./PlaybackBar";
 import { ScrollContext } from "./ScrollContext";
 import { Sidebar } from "./Sidebar";
 import { TitleBar } from "./TitleBar";
+import { useT } from "@/i18n";
 
 export function AppShell() {
+  const t = useT();
   const scrollRef = useRef<HTMLElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const queueOpen = useUi((s) => s.queueOpen);
@@ -88,7 +90,7 @@ export function AppShell() {
           role="status"
           className="pointer-events-none fixed bottom-28 left-1/2 z-50 -translate-x-1/2 rounded-md bg-raised px-5 py-3 text-body shadow-popover"
         >
-          {draggedTracks} songs · Drop on a playlist or Queue
+          {t.shell.dragging(draggedTracks)}
         </div>
       )}
       <AnimatePresence>
@@ -117,6 +119,7 @@ function useScrollRestoration(ref: React.RefObject<HTMLElement | null>) {
 }
 
 function DropOverlay() {
+  const t = useT();
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -132,10 +135,10 @@ function DropOverlay() {
           aria-hidden
         />
         <p className="font-display text-heading font-light glow">
-          Drop to play
+          {t.shell.dropTitle}
         </p>
         <p className="mt-1 text-body text-ink-3">
-          Audio files play right away · folders join your library
+          {t.shell.dropHint}
         </p>
       </div>
     </motion.div>

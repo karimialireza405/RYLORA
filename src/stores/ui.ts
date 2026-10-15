@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { backend } from "@/services/backend";
 import type { Preferences, TrackId } from "@/types/domain";
 import { notifyError } from "./toasts";
+import { messages } from "@/i18n";
 
 interface UiState {
   queueOpen: boolean;
@@ -64,7 +65,7 @@ export async function setPreference<K extends keyof Preferences>(
       useUi.setState({ prefs: restored });
       if (key === "motion") applyMotionPreference(previous.motion);
     }
-    notifyError("Couldn't save that setting", e);
+    notifyError(messages().errors.saveSetting, e);
   }
 }
 

@@ -14,12 +14,14 @@ import { setPreference, useUi } from "@/stores/ui";
 import { usePlayer } from "@/stores/player";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/utils/cn";
+import { useT } from "@/i18n";
 
 /**
  * Custom title bar. The whole bar is a drag region (double-click maximises, as on
  * native windows); interactive controls opt out with `no-drag`.
  */
 export function TitleBar({ scrolled }: { scrolled: boolean }) {
+  const t = useT();
   const canBack = useNavigation((s) => s.index > 0);
   const canForward = useNavigation((s) => s.index < s.stack.length - 1);
   const panelOpen = useUi((s) => s.nowPlayingPanelOpen);
@@ -31,7 +33,7 @@ export function TitleBar({ scrolled }: { scrolled: boolean }) {
     <header
       data-tauri-drag-region
       className={cn(
-        "drag-region absolute inset-x-0 top-0 z-30 flex h-[var(--titlebar-height)] items-center gap-2 pl-4",
+        "drag-region absolute inset-x-0 top-0 z-30 flex h-[var(--titlebar-height)] items-center gap-2 ps-4",
         "transition-[background-color,box-shadow] duration-(--duration-standard)",
         "border-b border-line bg-obsidian",
         scrolled && "shadow-[0_1px_0_0_var(--color-line)]",
@@ -40,7 +42,7 @@ export function TitleBar({ scrolled }: { scrolled: boolean }) {
       <div className="no-drag flex items-center gap-1">
         <IconButton
           icon={ChevronLeft}
-          label="Back"
+          label={t.titleBar.back}
           shortcut="Alt+←"
           size="sm"
           disabled={!canBack}
@@ -49,7 +51,7 @@ export function TitleBar({ scrolled }: { scrolled: boolean }) {
         />
         <IconButton
           icon={ChevronRight}
-          label="Forward"
+          label={t.titleBar.forward}
           shortcut="Alt+→"
           size="sm"
           disabled={!canForward}
@@ -67,12 +69,12 @@ export function TitleBar({ scrolled }: { scrolled: boolean }) {
           <IconButton
             icon={PanelRight}
             label={
-              panelOpen ? "Hide Now Playing panel" : "Show Now Playing panel"
+              panelOpen ? t.titleBar.hidePanel : t.titleBar.showPanel
             }
             active={panelOpen}
             aria-pressed={panelOpen}
             size="sm"
-            className="no-drag mr-2"
+            className="no-drag me-2"
             tooltipSide="bottom"
             onClick={() => {
               useUi.setState({
@@ -90,6 +92,7 @@ export function TitleBar({ scrolled }: { scrolled: boolean }) {
 }
 
 function SearchField() {
+  const t = useT();
   const query = useUi((s) => s.searchQuery);
   const route = useRoute();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,16 +106,17 @@ function SearchField() {
   return (
     <label className="no-drag relative ml-auto flex h-9 w-[min(440px,42vw)] items-center">
       <Search
-        className="pointer-events-none absolute left-3 size-4 text-ink-4"
+        className="pointer-events-none absolute start-3 size-4 text-ink-4"
         aria-hidden
       />
       <input
         ref={inputRef}
         type="search"
         value={query}
-        placeholder="Search your library"
-        aria-label="Search your library"
-        dir="auto"
+        placeholder={t.titleBar.search}
+        aria-label={t.titleBar.search}
+        // Typed text picks its own direction; the empty field follows the interface.
+        dir={query ? "auto" : undefined}
         onFocus={() => route.name !== "search" && navigate({ name: "search" })}
         onChange={(e) => {
           useUi.setState({ searchQuery: e.target.value });
@@ -125,12 +129,12 @@ function SearchField() {
           }
         }}
         className={cn(
-          "h-full w-full rounded-lg bg-deep pr-12 pl-9 text-body text-ink ring-1 ring-line-strong ring-inset placeholder:text-ink-4",
+          "h-full w-full rounded-lg bg-deep px-12 text-body text-ink ring-1 ring-line-strong ring-inset placeholder:text-ink-4",
           "transition-[background-color,box-shadow] hover:bg-raised focus-visible:bg-raised focus-visible:ring-blue-soft/70 focus-visible:outline-none",
           "[&::-webkit-search-cancel-button]:hidden",
         )}
       />
-      <kbd className="pointer-events-none absolute right-3 rounded-xs px-1 font-sans text-caption text-ink-4 ring-1 ring-line-strong">
+      <kbd className="pointer-events-none absolute end-3 rounded-xs px-1 font-sans text-caption text-ink-4 ring-1 ring-line-strong">
         Ctrl K
       </kbd>
     </label>
@@ -138,6 +142,7 @@ function SearchField() {
 }
 
 function WindowControls() {
+  const t = useT();
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
@@ -153,10 +158,10 @@ function WindowControls() {
   const base =
     "no-drag inline-flex h-[var(--titlebar-height)] w-[46px] items-center justify-center text-ink-3 transition-colors duration-(--duration-micro)";
   return (
-    <div className="flex self-start" role="group" aria-label="Window controls">
+    <div className="flex self-start" role="group" aria-label={t.titleBar.windowControls}>
       <button
         type="button"
-        aria-label="Minimize"
+        aria-label={t.titleBar.minimize}
         className={cn(base, "hover:bg-white/8 hover:text-ink")}
         onClick={() => void backend().system.window.minimize()}
       >
@@ -166,7 +171,7 @@ function WindowControls() {
       </button>
       <button
         type="button"
-        aria-label={maximized ? "Restore" : "Maximize"}
+        aria-label={maximized ? t.titleBar.restore : t.titleBar.maximize}
         className={cn(base, "hover:bg-white/8 hover:text-ink")}
         onClick={() => void backend().system.window.toggleMaximize()}
       >
@@ -195,7 +200,7 @@ function WindowControls() {
       </button>
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t.titleBar.close}
         className={cn(base, "hover:bg-[#c42b1c] hover:text-white")}
         onClick={() => void backend().system.window.close()}
       >

@@ -5,7 +5,7 @@ import { Dialog, TextField } from "@/components/ui/Dialog";
 import { useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { useUi } from "@/stores/ui";
-import { plural } from "@/utils/format";
+import { messages, useT } from "@/i18n";
 import { createPlaylist, renamePlaylist } from "./actions";
 
 const MAX_NAME = 120;
@@ -13,12 +13,13 @@ const MAX_NAME = 120;
 function suggestName(existing: string[]): string {
   const taken = new Set(existing.map((n) => n.toLowerCase()));
   for (let i = 1; ; i++) {
-    const name = `My Playlist #${i}`;
+    const name = messages().playlists.suggestedName(i);
     if (!taken.has(name.toLowerCase())) return name;
   }
 }
 
 export function NewPlaylistDialog() {
+  const t = useT();
   const { open, trackIds } = useUi((s) => s.newPlaylist);
   const playlists = useLibrary((s) => s.playlists);
   const [name, setName] = useState("");
@@ -29,7 +30,7 @@ export function NewPlaylistDialog() {
   }, [open]);
 
   const close = () => useUi.setState({ newPlaylist: { open: false, trackIds: [] } });
-  const error = name.trim() ? null : "Give your playlist a name.";
+  const error = name.trim() ? null : t.playlists.nameRequired;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -47,17 +48,17 @@ export function NewPlaylistDialog() {
     <Dialog
       open={open}
       onOpenChange={(o) => !o && close()}
-      title="New playlist"
-      description={trackIds.length ? `${plural(trackIds.length, "song")} will be added.` : undefined}
+      title={t.playlists.newPlaylist}
+      description={trackIds.length ? t.playlists.willBeAdded(trackIds.length) : undefined}
     >
       <form onSubmit={submit}>
-        <TextField label="Name" value={name} onChange={setName} autoFocus maxLength={MAX_NAME} error={error} />
+        <TextField label={t.playlists.name} value={name} onChange={setName} autoFocus maxLength={MAX_NAME} error={error} />
         <div className="mt-6 flex justify-end gap-2.5">
           <Button variant="ghost" onClick={close}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button variant="primary" type="submit" disabled={!!error || busy}>
-            Create
+            {t.common.create}
           </Button>
         </div>
       </form>
@@ -66,13 +67,14 @@ export function NewPlaylistDialog() {
 }
 
 export function RenamePlaylistDialog({ id, current, open, onClose }: { id: number; current: string; open: boolean; onClose: () => void }) {
+  const t = useT();
   const [name, setName] = useState(current);
   useEffect(() => {
     if (open) setName(current);
   }, [open, current]);
-  const error = name.trim() ? null : "Name can't be empty.";
+  const error = name.trim() ? null : t.playlists.nameEmpty;
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()} title="Rename playlist">
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()} title={t.playlists.rename}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -80,13 +82,13 @@ export function RenamePlaylistDialog({ id, current, open, onClose }: { id: numbe
           if (name.trim() === current || (await renamePlaylist(id, name))) onClose();
         }}
       >
-        <TextField label="Name" value={name} onChange={setName} autoFocus maxLength={MAX_NAME} error={error} />
+        <TextField label={t.playlists.name} value={name} onChange={setName} autoFocus maxLength={MAX_NAME} error={error} />
         <div className="mt-6 flex justify-end gap-2.5">
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button variant="primary" type="submit" disabled={!!error}>
-            Save
+            {t.common.save}
           </Button>
         </div>
       </form>

@@ -19,7 +19,7 @@ import { navigate } from "@/stores/navigation";
 import { player } from "@/stores/player";
 import { openNewPlaylist, useUi } from "@/stores/ui";
 import type { Track } from "@/types/domain";
-import { plural } from "@/utils/format";
+import { messages } from "@/i18n";
 
 export interface TrackMenuOptions {
   /** Tracks the menu acts on (the selection, or the single clicked track). */
@@ -33,14 +33,15 @@ export interface TrackMenuOptions {
 
 export function playlistSubmenu(trackIds: number[]): MenuEntry {
   const playlists = useLibrary.getState().playlists;
+  const t = messages();
   return {
     type: "sub",
-    label: "Add to playlist",
+    label: t.trackMenu.addToPlaylist,
     icon: ListPlus,
     children: [
       {
         type: "item",
-        label: "New playlist…",
+        label: t.trackMenu.newPlaylist,
         icon: Plus,
         onSelect: () => openNewPlaylist(trackIds),
       },
@@ -68,23 +69,24 @@ export function buildTrackMenu({
   const single = tracks.length === 1 ? tracks[0] : undefined;
   const allFavorite = tracks.every((t) => t.favorite);
   const entries: MenuEntry[] = [];
+  const t = messages();
 
   if (tracks.length > 1)
     entries.push({
       type: "label",
-      label: plural(tracks.length, "song") + " selected",
+      label: t.trackMenu.selected(tracks.length),
     });
   entries.push(
-    { type: "item", label: "Play", icon: Play, onSelect: play },
+    { type: "item", label: t.menu.play, icon: Play, onSelect: play },
     {
       type: "item",
-      label: "Play next",
+      label: t.menu.playNext,
       icon: ListEnd,
       onSelect: () => player.playNext(ids),
     },
     {
       type: "item",
-      label: "Add to queue",
+      label: t.menu.addToQueue,
       icon: ListMusic,
       onSelect: () => player.enqueue(ids),
     },
@@ -92,7 +94,7 @@ export function buildTrackMenu({
     playlistSubmenu(ids),
     {
       type: "item",
-      label: allFavorite ? "Remove from favorites" : "Add to favorites",
+      label: allFavorite ? t.common.removeFromFavorites : t.common.addToFavorites,
       icon: allFavorite ? HeartOff : Heart,
       onSelect: () => void setFavorite(ids, !allFavorite),
     },
@@ -102,14 +104,14 @@ export function buildTrackMenu({
     if (!hideGoToAlbum)
       entries.push({
         type: "item",
-        label: "Go to album",
+        label: t.trackMenu.goToAlbum,
         icon: Disc3,
         onSelect: () => navigate({ name: "album", id: single.albumId }),
       });
     if (!hideGoToArtist)
       entries.push({
         type: "item",
-        label: "Go to artist",
+        label: t.menu.goToArtist,
         icon: Mic2,
         onSelect: () => navigate({ name: "artist", id: single.artistId }),
       });
@@ -119,7 +121,7 @@ export function buildTrackMenu({
       { type: "separator" },
       {
         type: "item",
-        label: "Remove from playlist",
+        label: t.trackMenu.removeFromPlaylist,
         icon: Trash2,
         danger: true,
         onSelect: onRemoveFromPlaylist,
@@ -131,7 +133,7 @@ export function buildTrackMenu({
       { type: "separator" },
       {
         type: "item",
-        label: "Edit song information",
+        label: t.trackMenu.editInfo,
         icon: Pencil,
         onSelect: () => useUi.setState({ editTrackId: single.id }),
       },

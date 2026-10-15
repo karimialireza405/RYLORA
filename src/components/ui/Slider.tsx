@@ -35,6 +35,7 @@ export function Slider({ value, max, step = 1, label, valueText, disabled, onCha
 
   return (
     <RadixSlider.Root
+      dir="ltr"
       className={cn("group relative flex h-5 w-full touch-none items-center select-none", disabled && "opacity-40", className)}
       value={[Math.min(shown, safeMax)]}
       max={safeMax}

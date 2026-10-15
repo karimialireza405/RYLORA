@@ -11,10 +11,12 @@ import { playFrom, TrackTable } from "@/features/library/TrackTable";
 import { useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
-import { joinMeta, plural } from "@/utils/format";
+import { joinMeta } from "@/utils/format";
+import { useT } from "@/i18n";
 import { compareAlbumOrder } from "@/utils/tracks";
 
 export function ArtistPage({ id }: { id: number }) {
+  const t = useT();
   const artist = useLibrary((s) => s.artistById.get(id));
   const allTracks = useLibrary((s) => s.tracks);
   const albums = useLibrary((s) => s.albums);
@@ -51,8 +53,8 @@ export function ArtistPage({ id }: { id: number }) {
     return (
       <Page>
         {loaded && (
-          <EmptyState icon={Mic2} title="Artist not found" description="They may have been removed from your library.">
-            <Button onClick={() => navigate({ name: "library", tab: "artists" })}>Browse artists</Button>
+          <EmptyState icon={Mic2} title={t.artist.notFound} description={t.artist.notFoundHint}>
+            <Button onClick={() => navigate({ name: "library", tab: "artists" })}>{t.artist.browse}</Button>
           </EmptyState>
         )}
       </Page>
@@ -63,20 +65,20 @@ export function ArtistPage({ id }: { id: number }) {
     <div className="pb-16">
       <CollectionHero
         accent={artist.accent}
-        overline="Artist"
+        overline={t.artist.overline}
         title={artist.name}
         art={<Artwork hash={artist.artwork} seed={artist.name} size="lg" rounded="full" className="size-[216px] shadow-art" />}
         meta={
           <>
-            <span>{plural(artist.albumCount, "album")}</span>
+            <span>{t.count.albums(artist.albumCount)}</span>
             <Dot />
-            <span>{plural(artist.trackCount, "song")}</span>
+            <span>{t.count.songs(artist.trackCount)}</span>
           </>
         }
         actions={
           <>
             <Button variant="primary" icon={Play} disabled={!playable.length} onClick={() => player.playTracks(playable)}>
-              Play
+              {t.common.play}
             </Button>
             <Button
               variant="secondary"
@@ -87,31 +89,31 @@ export function ArtistPage({ id }: { id: number }) {
                 player.playTracks(playable, Math.floor(Math.random() * playable.length));
               }}
             >
-              Shuffle
+              {t.common.shuffle}
             </Button>
           </>
         }
       />
       <div className="mx-auto w-full max-w-[1680px] px-8">
         {mostPlayed.length > 0 && (
-          <section className="mb-10" aria-label="Most played">
-            <h2 className="mb-3 font-display text-title font-normal tracking-[-0.01em]">Most played</h2>
-            <TrackTable label="Most played" tracks={mostPlayed} onPlay={(i) => playFrom(mostPlayed, i, player.playTracks)} />
+          <section className="mb-10" aria-label={t.artist.mostPlayed}>
+            <h2 className="mb-3 font-display text-title font-normal tracking-[-0.01em]">{t.artist.mostPlayed}</h2>
+            <TrackTable label={t.artist.mostPlayed} tracks={mostPlayed} onPlay={(i) => playFrom(mostPlayed, i, player.playTracks)} />
           </section>
         )}
         {artistAlbums.length > 0 && (
-          <Shelf title="Albums" className="mt-0 mb-12">
+          <Shelf title={t.artist.albums} className="mt-0 mb-12">
             <CardGrid>
               {artistAlbums.map((a) => (
-                <AlbumCard key={a.id} album={a} subtitle={joinMeta([a.year, plural(a.trackCount, "song")])} />
+                <AlbumCard key={a.id} album={a} subtitle={joinMeta([a.year, t.count.songs(a.trackCount)])} />
               ))}
             </CardGrid>
           </Shelf>
         )}
-        <h2 className="mb-3 font-display text-title font-normal tracking-[-0.01em]">All songs</h2>
-        <TrackTable label={`${artist.name} songs`} tracks={tracks} onPlay={(i) => playFrom(tracks, i, player.playTracks)} />
+        <h2 className="mb-3 font-display text-title font-normal tracking-[-0.01em]">{t.artist.allSongs}</h2>
+        <TrackTable label={t.artist.songsLabel(artist.name)} tracks={tracks} onPlay={(i) => playFrom(tracks, i, player.playTracks)} />
         {appearsOn.length > 0 && (
-          <Shelf title="Appears on">
+          <Shelf title={t.artist.appearsOn}>
             <CardGrid singleRow>
               {appearsOn.map((a) => (
                 <AlbumCard key={a.id} album={a} />

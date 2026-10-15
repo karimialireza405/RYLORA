@@ -13,8 +13,10 @@ import { player } from "@/stores/player";
 import { useUi } from "@/stores/ui";
 import { searchLibrary, type SearchResults } from "@/utils/tracks";
 import { joinMeta } from "@/utils/format";
+import { useT } from "@/i18n";
 
 export function SearchPage() {
+  const t = useT();
   const query = useUi((s) => s.searchQuery);
   const deferred = useDeferredValue(query);
   const tracks = useLibrary((s) => s.tracks);
@@ -33,39 +35,42 @@ export function SearchPage() {
 
   return (
     <Page>
-      <h1 className="sr-only">Search</h1>
+      <h1 className="sr-only">{t.search.title}</h1>
       {!hasQuery ? (
         <EmptyState
           icon={SearchIcon}
-          title="Search your library"
+          title={t.search.emptyTitle}
           description={
             <>
-              Find songs, albums, artists and playlists instantly. Press <kbd className="rounded-xs px-1 ring-1 ring-line-strong">Ctrl K</kbd> from
-              anywhere.
+              {t.search.emptyBefore}{" "}
+              <kbd dir="ltr" className="rounded-xs px-1 ring-1 ring-line-strong">
+                Ctrl K
+              </kbd>{" "}
+              {t.search.emptyAfter}
             </>
           }
           className="pt-28"
         />
       ) : nothing ? (
-        <EmptyState icon={SearchX} title={`No results for “${deferred.trim()}”`} description="Check the spelling, or try fewer words." className="pt-28" />
+        <EmptyState icon={SearchX} title={t.search.noResults(deferred.trim())} description={t.search.noResultsHint} className="pt-28" />
       ) : (
         <div aria-live="polite">
           <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(320px,0.9fr)_1.6fr]">
             {results.top && (
-              <section aria-label="Top result">
-                <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">Top result</h2>
+              <section aria-label={t.search.topResult}>
+                <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">{t.search.topResult}</h2>
                 <TopResult top={results.top} />
               </section>
             )}
             {topTracks.length > 0 && (
-              <section aria-label="Songs" className="min-w-0">
-                <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">Songs</h2>
-                <TrackTable label="Song results" tracks={topTracks} onPlay={(i) => playFrom(results.tracks, i, player.playTracks)} />
+              <section aria-label={t.search.songs} className="min-w-0">
+                <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">{t.search.songs}</h2>
+                <TrackTable label={t.search.songResults} tracks={topTracks} onPlay={(i) => playFrom(results.tracks, i, player.playTracks)} />
               </section>
             )}
           </div>
           {results.artists.length > 0 && (
-            <Shelf title="Artists">
+            <Shelf title={t.search.artists}>
               <CardGrid singleRow min={150}>
                 {results.artists.map((a) => (
                   <ArtistCard key={a.id} artist={a} />
@@ -74,7 +79,7 @@ export function SearchPage() {
             </Shelf>
           )}
           {results.albums.length > 0 && (
-            <Shelf title="Albums">
+            <Shelf title={t.search.albums}>
               <CardGrid singleRow>
                 {results.albums.map((a) => (
                   <AlbumCard key={a.id} album={a} />
@@ -83,7 +88,7 @@ export function SearchPage() {
             </Shelf>
           )}
           {results.playlists.length > 0 && (
-            <Shelf title="Playlists">
+            <Shelf title={t.search.playlists}>
               <CardGrid singleRow>
                 {results.playlists.map((p) => (
                   <PlaylistCard key={p.id} playlist={p} />
@@ -92,9 +97,9 @@ export function SearchPage() {
             </Shelf>
           )}
           {results.tracks.length > topTracks.length && (
-            <section className="mt-11" aria-label="All matching songs">
-              <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">All matching songs</h2>
-              <TrackTable label="All song results" tracks={results.tracks} onPlay={(i) => playFrom(results.tracks, i, player.playTracks)} />
+            <section className="mt-11" aria-label={t.search.allMatching}>
+              <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">{t.search.allMatching}</h2>
+              <TrackTable label={t.search.allSongResults} tracks={results.tracks} onPlay={(i) => playFrom(results.tracks, i, player.playTracks)} />
             </section>
           )}
         </div>
@@ -104,12 +109,13 @@ export function SearchPage() {
 }
 
 function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
+  const t = useT();
   const { title, subtitle, hash, seed, open, play } = (() => {
     switch (top.kind) {
       case "artist":
         return {
           title: top.item.name,
-          subtitle: "Artist",
+          subtitle: t.search.artist,
           hash: top.item.artwork,
           seed: top.item.name,
           open: () => navigate({ name: "artist", id: top.item.id }),
@@ -121,7 +127,7 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
       case "album":
         return {
           title: top.item.title,
-          subtitle: joinMeta(["Album", top.item.artist]),
+          subtitle: joinMeta([t.search.album, top.item.artist]),
           hash: top.item.artwork,
           seed: top.item.title,
           open: () => navigate({ name: "album", id: top.item.id }),
@@ -130,7 +136,7 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
       case "track":
         return {
           title: top.item.title,
-          subtitle: joinMeta(["Song", top.item.artist]),
+          subtitle: joinMeta([t.search.song, top.item.artist]),
           hash: top.item.artwork,
           seed: top.item.album,
           open: () => navigate({ name: "album", id: top.item.albumId }),
@@ -153,7 +159,7 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
           style={{ height: 112, width: 146 }}
         />
       )}
-      <button type="button" onClick={open} className="mt-5 block w-full text-left after:absolute after:inset-0 after:content-['']">
+      <button type="button" onClick={open} className="mt-5 block w-full text-start after:absolute after:inset-0 after:content-['']">
         <span className="bidi glow-room block truncate font-display text-heading font-light glow tracking-[-0.01em]">
           {title}
         </span>
@@ -162,8 +168,8 @@ function TopResult({ top }: { top: NonNullable<SearchResults["top"]> }) {
       <button
         type="button"
         onClick={play}
-        aria-label={`Play ${title}`}
-        className="absolute right-6 bottom-6 z-10 flex size-12 items-center justify-center rounded-full bg-ink text-obsidian opacity-0 shadow-[0_8px_20px_-6px_rgb(0_0_0/0.7)] transition-[opacity,transform] group-focus-within:opacity-100 group-hover:opacity-100 hover:scale-105"
+        aria-label={t.common.playNamed(title)}
+        className="absolute end-6 bottom-6 z-10 flex size-12 items-center justify-center rounded-full bg-ink text-obsidian opacity-0 shadow-[0_8px_20px_-6px_rgb(0_0_0/0.7)] transition-[opacity,transform] group-focus-within:opacity-100 group-hover:opacity-100 hover:scale-105"
       >
         <Play className="size-5 translate-x-[1px] fill-current" strokeWidth={0} aria-hidden />
       </button>

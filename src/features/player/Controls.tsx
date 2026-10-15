@@ -18,7 +18,8 @@ import { Slider } from "@/components/ui/Slider";
 import { WaveformSeek } from "./WaveformSeek";
 import { player, usePlayer, useProgress } from "@/stores/player";
 import { cn } from "@/utils/cn";
-import { formatTime } from "@/utils/format";
+import { formatPercent, formatTime } from "@/utils/format";
+import { messages } from "@/i18n";
 
 /** Round play/pause button with an icon cross-fade. */
 export function PlayButton({
@@ -38,8 +39,8 @@ export function PlayButton({
       type="button"
       onClick={player.toggle}
       disabled={!hasTrack}
-      aria-label={playing ? "Pause" : "Play"}
-      title={playing ? "Pause (Space)" : "Play (Space)"}
+      aria-label={playing ? messages().common.pause : messages().common.play}
+      title={playing ? messages().player.pauseWithKey : messages().player.playWithKey}
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center rounded-full bg-blue-soft text-obsidian",
         "shadow-transport transition-[transform,background-color] duration-(--duration-micro) ease-(--ease-out)",
@@ -86,10 +87,10 @@ export function TransportControls({
   const hasTrack = usePlayer((s) => s.current !== null);
   const big = size !== "md";
   return (
-    <div className={cn("flex items-center", big ? "gap-5" : "gap-2")}>
+    <div dir="ltr" className={cn("flex items-center", big ? "gap-5" : "gap-2")}>
       <IconButton
         icon={Shuffle}
-        label={shuffle ? "Shuffle on" : "Shuffle off"}
+        label={shuffle ? messages().player.shuffleOn : messages().player.shuffleOff}
         shortcut="S"
         size={big ? "md" : "sm"}
         active={shuffle}
@@ -99,7 +100,7 @@ export function TransportControls({
       />
       <IconButton
         icon={SkipBack}
-        label="Previous"
+        label={messages().player.previous}
         shortcut="Ctrl+←"
         size={big ? "lg" : "md"}
         iconClassName="fill-current"
@@ -109,7 +110,7 @@ export function TransportControls({
       <PlayButton size={size} />
       <IconButton
         icon={SkipForward}
-        label="Next"
+        label={messages().player.next}
         shortcut="Ctrl+→"
         size={big ? "lg" : "md"}
         iconClassName="fill-current"
@@ -120,10 +121,10 @@ export function TransportControls({
         icon={repeat === "one" ? Repeat1 : Repeat}
         label={
           repeat === "off"
-            ? "Repeat off"
+            ? messages().player.repeatOff
             : repeat === "all"
-              ? "Repeat all"
-              : "Repeat one"
+              ? messages().player.repeatAll
+              : messages().player.repeatOne
         }
         shortcut="R"
         size={big ? "md" : "sm"}
@@ -152,7 +153,7 @@ export function ProgressBar({
   );
   const trackId = usePlayer((s) => s.current?.id ?? null);
   return (
-    <div className={cn("flex w-full items-center gap-3", className)}>
+    <div dir="ltr" className={cn("flex w-full items-center gap-3", className)}>
       <span className={cn(time, "text-right")}>{formatTime(positionMs)}</span>
       <WaveformSeek
         value={positionMs}
@@ -186,23 +187,23 @@ export function VolumeControl({
           ? Volume1
           : Volume2;
   return (
-    <div className={cn("flex items-center gap-1.5", className)}>
+    <div dir="ltr" className={cn("flex items-center gap-1.5", className)}>
       <IconButton
         icon={Icon}
-        label={muted ? "Unmute" : "Mute"}
+        label={muted ? messages().player.unmute : messages().player.mute}
         shortcut="M"
         size="sm"
         onClick={player.toggleMute}
       />
       <div className={width}>
         <Slider
-          label="Volume"
+          label={messages().player.volume}
           value={Math.round(effective * 100)}
           max={100}
           step={1}
-          valueText={`${Math.round(effective * 100)}%`}
+          valueText={formatPercent(Math.round(effective * 100))}
           onChange={(v) => player.setVolume(v / 100)}
-          renderBubble={(v) => `${Math.round(v)}%`}
+          renderBubble={(v) => formatPercent(Math.round(v))}
         />
       </div>
     </div>

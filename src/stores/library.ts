@@ -15,6 +15,7 @@ import type {
   TrackId,
 } from "@/types/domain";
 import { notifyError } from "./toasts";
+import { messages } from "@/i18n";
 
 interface LibraryState {
   loaded: boolean;
@@ -88,7 +89,7 @@ export function refreshLibrary(): Promise<void> {
         });
       } while (queued);
     } catch (e) {
-      notifyError("Couldn't load your library", e);
+      notifyError(messages().errors.loadLibrary, e);
     } finally {
       inflight = null;
     }
@@ -105,7 +106,7 @@ export async function setFavorite(ids: TrackId[], favorite: boolean): Promise<vo
   try {
     await backend().library.setFavorite(ids, favorite);
   } catch (e) {
-    notifyError("Couldn't update favorites", e);
+    notifyError(messages().errors.updateFavorites, e);
     void refreshLibrary();
   }
 }

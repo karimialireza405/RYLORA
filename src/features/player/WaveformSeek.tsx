@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AudioScene } from "@/features/visualizer/AudioScene";
 import { formatTime } from "@/utils/format";
 import { cn } from "@/utils/cn";
+import { messages } from "@/i18n";
 
 /** Full ribbon seek target, retaining Radix keyboard, touch and accessibility behavior. */
 export function WaveformSeek({
@@ -26,7 +27,8 @@ export function WaveformSeek({
     safeMax = Math.max(1, max);
   return (
     <RadixSlider.Root
-      aria-label="Seek"
+      dir="ltr"
+      aria-label={messages().player.seek}
       value={[Math.max(0, Math.min(shown, safeMax))]}
       max={safeMax}
       step={1000}
@@ -50,8 +52,8 @@ export function WaveformSeek({
         <RadixSlider.Range className="absolute h-full" />
       </RadixSlider.Track>
       <RadixSlider.Thumb
-        aria-label="Seek"
-        aria-valuetext={`${formatTime(shown)} of ${formatTime(max)}`}
+        aria-label={messages().player.seek}
+        aria-valuetext={messages().player.positionOf(formatTime(shown), formatTime(max))}
         className="relative block h-7 w-3 rounded-full outline-none focus-visible:ring-1 focus-visible:ring-blue-soft/60 focus-visible:shadow-accent-focus"
       >
         {draft !== null && (

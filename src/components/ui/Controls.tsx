@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useId } from "react";
 
 import { cn } from "@/utils/cn";
+import { formatNumber } from "@/utils/format";
 
 export function Switch({
   checked,
@@ -128,8 +129,8 @@ export function Segmented<T extends string>({
             <span className="relative">
               {o.label}
               {o.count !== undefined && (
-                <span className="ml-1.5 font-medium text-ink-4">
-                  {o.count.toLocaleString()}
+                <span className="ms-1.5 font-medium text-ink-4">
+                  {formatNumber(o.count)}
                 </span>
               )}
             </span>

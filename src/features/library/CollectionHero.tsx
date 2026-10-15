@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/utils/cn";
+import { messages } from "@/i18n";
 
 /**
  * Header for albums, artists and playlists: artwork-led, lit by the artwork's
@@ -39,7 +40,7 @@ export function CollectionHero({
         <div className="min-w-0 pb-1">
           <p className="caps text-[10px] text-ink-2 uppercase">{overline}</p>
           {onTitleClick ? (
-            <button type="button" onClick={onTitleClick} className="mt-2 block max-w-full rounded-xs text-left" title="Rename">
+            <button type="button" onClick={onTitleClick} className="mt-2 block max-w-full rounded-xs text-start" title={messages().collections.rename}>
               <TitleText title={title} size={size} />
             </button>
           ) : (

@@ -6,6 +6,7 @@ import { ask, open } from "@tauri-apps/plugin-dialog";
 
 import type { Backend } from "./types";
 import { SUPPORTED_EXTENSIONS } from "@/utils/formats";
+import { messages } from "@/i18n";
 
 /** Production backend: typed wrappers around Tauri commands and events. */
 export function createTauriBackend(): Backend {
@@ -69,20 +70,20 @@ export function createTauriBackend(): Backend {
 
     system: {
       pickFolder: async () => {
-        const result = await open({ directory: true, multiple: false, title: "Add a music folder" });
+        const result = await open({ directory: true, multiple: false, title: messages().dialogs.addFolder });
         return typeof result === "string" ? result : null;
       },
       pickAudioFiles: async () => {
         const result = await open({
           multiple: true,
-          title: "Open music files",
-          filters: [{ name: "Audio", extensions: [...SUPPORTED_EXTENSIONS] }],
+          title: messages().dialogs.openFiles,
+          filters: [{ name: messages().dialogs.audioFiles, extensions: [...SUPPORTED_EXTENSIONS] }],
         });
         return Array.isArray(result) ? result : result ? [result] : [];
       },
-      confirm: (message, title, okLabel) => ask(message, { title, kind: "warning", okLabel, cancelLabel: "Cancel" }),
+      confirm: (message, title, okLabel) => ask(message, { title, kind: "warning", okLabel, cancelLabel: messages().common.cancel }),
       pickArtwork: async () => {
-        const result = await open({multiple:false,title:"Choose cover artwork",filters:[{name:"Images",extensions:["jpg","jpeg","png","webp","bmp","gif"]}]});
+        const result = await open({multiple:false,title:messages().dialogs.chooseCover,filters:[{name:messages().dialogs.images,extensions:["jpg","jpeg","png","webp","bmp","gif"]}]});
         return typeof result === "string" ? result : null;
       },
       window: {

@@ -4,8 +4,8 @@ import { player } from "@/stores/player";
 import { notifyError, toast } from "@/stores/toasts";
 import { navigate } from "@/stores/navigation";
 import type { LibraryFolder } from "@/types/domain";
-import { isSupportedAudioPath, SUPPORTED_FORMAT_LABEL } from "@/utils/formats";
-import { plural } from "@/utils/format";
+import { isSupportedAudioPath } from "@/utils/formats";
+import { messages } from "@/i18n";
 
 export interface ImportOutcome {
   trackIds: number[];
@@ -22,13 +22,13 @@ export async function addFolderInteractive(): Promise<boolean> {
     await backend().library.addFolder(path);
     toast({
       tone: "info",
-      title: "Adding folder",
-      description: `Scanning ${path} in the background.`,
+      title: messages().importing.addingFolder,
+      description: messages().importing.scanningPath(path),
     });
     await refreshLibrary();
     return true;
   } catch (e) {
-    notifyError("Couldn't add that folder", e);
+    notifyError(messages().importing.addFolderFailed, e);
     return false;
   }
 }
@@ -37,17 +37,17 @@ export async function removeFolderInteractive(
   folder: LibraryFolder,
 ): Promise<void> {
   const ok = await backend().system.confirm(
-    `Remove "${folder.path}" from your library?\n\nIts ${plural(folder.trackCount, "song")} will leave your library, playlists and favorites. Files on disk are not touched.`,
-    "Remove folder",
-    "Remove",
+    messages().importing.removeFolderPrompt(folder.path, folder.trackCount),
+    messages().importing.removeFolderTitle,
+    messages().common.remove,
   );
   if (!ok) return;
   try {
     await backend().library.removeFolder(folder.id);
-    toast({ tone: "success", title: "Folder removed" });
+    toast({ tone: "success", title: messages().importing.folderRemoved });
     void refreshLibrary();
   } catch (e) {
-    notifyError("Couldn't remove that folder", e);
+    notifyError(messages().importing.removeFolderFailed, e);
   }
 }
 
@@ -56,7 +56,7 @@ export async function rescanLibrary(): Promise<void> {
     await backend().library.rescan();
     await refreshLibrary();
   } catch (e) {
-    notifyError("Couldn't start a scan", e);
+    notifyError(messages().importing.scanFailed, e);
   }
 }
 
@@ -75,7 +75,7 @@ export async function addFilesInteractive(): Promise<ImportOutcome | null> {
     const paths = await backend().system.pickAudioFiles();
     return paths.length ? await importMusicFiles(paths) : null;
   } catch (e) {
-    notifyError("Couldn't choose those files", e);
+    notifyError(messages().importing.chooseFilesFailed, e);
     return null;
   }
 }
@@ -87,7 +87,7 @@ export async function importMusicFiles(
   if (useLibrary.getState().importing) {
     toast({
       tone: "info",
-      title: "Please wait for your current import to finish",
+      title: messages().importing.waitForImport,
     });
     return null;
   }
@@ -113,24 +113,24 @@ export async function importMusicFiles(
       const ids = result.trackIds;
       toast({
         tone: "success",
-        title: `${plural(ids.length, "song")} ready in your library`,
+        title: messages().importing.readyInLibrary(ids.length),
         description: rejected
-          ? `${plural(rejected, "file")} couldn't be read.`
+          ? messages().importing.unreadableFiles(rejected)
           : undefined,
-        action: { label: "Play", run: () => player.playTracks(ids, 0) },
+        action: { label: messages().common.play, run: () => player.playTracks(ids, 0) },
       });
       navigate({ name: "library", tab: "recent" });
       return result;
     } else {
       toast({
         tone: "error",
-        title: "Nothing was added",
-        description: `RYLORA plays ${SUPPORTED_FORMAT_LABEL}.`,
+        title: messages().importing.nothingAdded,
+        description: messages().importing.playsFormats(messages().common.supportedFormats),
       });
       return result;
     }
   } catch (e) {
-    notifyError("Couldn't add those files", e);
+    notifyError(messages().importing.addFilesFailed, e);
   } finally {
     useLibrary.setState({ importing: false });
   }
@@ -145,10 +145,10 @@ export async function handleDroppedPaths(paths: string[]): Promise<void> {
   for (const folder of others) {
     try {
       await backend().library.addFolder(folder);
-      toast({ tone: "info", title: "Adding folder", description: folder });
+      toast({ tone: "info", title: messages().importing.addingFolder, description: folder });
       await refreshLibrary();
     } catch (e) {
-      notifyError("Couldn't add that folder", e);
+      notifyError(messages().importing.addFolderFailed, e);
     }
   }
   if (files.length) {
@@ -156,8 +156,8 @@ export async function handleDroppedPaths(paths: string[]): Promise<void> {
   } else if (!others.length) {
     toast({
       tone: "error",
-      title: "Unsupported files",
-      description: `RYLORA plays ${SUPPORTED_FORMAT_LABEL}.`,
+      title: messages().importing.unsupportedFiles,
+      description: messages().importing.playsFormats(messages().common.supportedFormats),
     });
   }
 }

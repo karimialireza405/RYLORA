@@ -8,11 +8,12 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use windows::core::HSTRING;
-use windows::Foundation::{TimeSpan, TypedEventHandler, Uri};
+use windows::Foundation::{TimeSpan, TypedEventHandler};
 use windows::Media::{
     MediaPlaybackStatus, MediaPlaybackType, SystemMediaTransportControls, SystemMediaTransportControlsButton,
     SystemMediaTransportControlsButtonPressedEventArgs, SystemMediaTransportControlsTimelineProperties,
 };
+use windows::Storage::StorageFile;
 use windows::Storage::Streams::RandomAccessStreamReference;
 use windows::Win32::Foundation::HWND;
 use windows::Win32::System::WinRT::ISystemMediaTransportControlsInterop;
@@ -95,8 +96,10 @@ impl WindowsMediaControls {
             }
             match artwork.filter(|p| p.exists()) {
                 Some(path) => {
-                    let uri = Uri::CreateUri(&HSTRING::from(format!("file:///{}", path.to_string_lossy().replace('\\', "/"))))?;
-                    updater.SetThumbnail(&RandomAccessStreamReference::CreateFromUri(&uri)?)?;
+                    // `CreateFromUri` only accepts http(s)/ms-appx/ms-appdata, not file:///,
+                    // so local covers go through a StorageFile.
+                    let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(path.as_os_str()))?.join()?;
+                    updater.SetThumbnail(&RandomAccessStreamReference::CreateFromFile(&file)?)?;
                 }
                 None => updater.SetThumbnail(None)?,
             }

@@ -13,7 +13,8 @@ import { navigate } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
 import { setPreference, useUi } from "@/stores/ui";
 import { cn } from "@/utils/cn";
-import { formatTime, plural } from "@/utils/format";
+import { formatTime, localizeDigits } from "@/utils/format";
+import { isRtlLanguage, messages } from "@/i18n";
 
 export function ListeningPanel() {
   const current = usePlayer((s) => s.current),
@@ -43,21 +44,23 @@ export function ListeningPanel() {
   const select = (value: "playing" | "queue" | "info") =>
     useUi.setState({ listeningTab: value, queueOpen: value === "queue" });
   const clamp = (n: number) => Math.max(280, Math.min(400, n));
+  // The panel sits at the inline end, so growing it means dragging toward the inline start.
+  const toStart = isRtlLanguage() ? 1 : -1;
   return (
     <aside
-      aria-label="Listening panel"
-      className="relative flex h-full shrink-0 flex-col border-l border-line bg-base"
+      aria-label={messages().listening.panel}
+      className="relative flex h-full shrink-0 flex-col border-s border-line bg-base"
       style={{ width }}
     >
       <div
         role="separator"
-        aria-label="Resize listening panel"
+        aria-label={messages().listening.resize}
         aria-orientation="vertical"
         aria-valuemin={280}
         aria-valuemax={400}
         aria-valuenow={width}
         tabIndex={0}
-        className="absolute inset-y-0 -left-1 z-20 w-2 cursor-col-resize touch-none hover:bg-blue/20 focus-visible:bg-blue/20"
+        className="absolute inset-y-0 -start-1 z-20 w-2 cursor-col-resize touch-none hover:bg-blue/20 focus-visible:bg-blue/20"
         onPointerDown={(e) => {
           start.current = { x: e.clientX, width };
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -65,7 +68,7 @@ export function ListeningPanel() {
         onPointerMove={(e) => {
           if (start.current)
             setDragWidth(
-              clamp(start.current.width + start.current.x - e.clientX),
+              clamp(start.current.width + toStart * (e.clientX - start.current.x)),
             );
         }}
         onPointerUp={(e) => {
@@ -85,16 +88,16 @@ export function ListeningPanel() {
             e.preventDefault();
             void setPreference(
               "panelWidth",
-              String(clamp(width + (e.key === "ArrowLeft" ? 16 : -16))),
+              String(clamp(width + (e.key === "ArrowLeft" ? -16 : 16) * toStart)),
             );
           }
         }}
       />
       <div className="flex shrink-0 items-center justify-between px-5 pt-5 pb-2">
-        <h2 className="text-heading font-bold">Listening</h2>
+        <h2 className="text-heading font-bold">{messages().collections.listening}</h2>
         <IconButton
           icon={X}
-          label="Close listening panel"
+          label={messages().listening.close}
           size="xs"
           onClick={() => {
             useUi.setState({ nowPlayingPanelOpen: false, queueOpen: false });
@@ -104,7 +107,7 @@ export function ListeningPanel() {
       </div>
       <div
         role="tablist"
-        aria-label="Listening view"
+        aria-label={messages().listening.view}
         className="collection-tabs mx-5 shrink-0 gap-5!"
       >
         {(["playing", "queue", "info"] as const).map((value) => (
@@ -132,10 +135,10 @@ export function ListeningPanel() {
             onClick={() => select(value)}
           >
             {value === "playing"
-              ? "Now playing"
+              ? messages().listening.tabPlaying
               : value === "queue"
-                ? "Queue"
-                : "Info"}
+                ? messages().listening.tabQueue
+                : messages().listening.tabInfo}
           </button>
         ))}
       </div>
@@ -162,28 +165,28 @@ export function ListeningPanel() {
             </h3>
             <dl className="mt-5 space-y-4 text-meta">
               {[
-                ["Artist", track.artist],
-                ["Album", track.album],
-                ["Album artist", track.albumArtist],
-                ["Year", track.year],
-                ["Genre", track.genre],
-                ["Format", track.format.toUpperCase()],
-                ["Duration", formatTime(track.durationMs)],
-                ["File", track.path],
+                [messages().listening.artist, track.artist],
+                [messages().listening.album, track.album],
+                [messages().listening.albumArtist, track.albumArtist],
+                [messages().listening.year, track.year && localizeDigits(String(track.year))],
+                [messages().listening.genre, track.genre],
+                [messages().listening.format, track.format.toUpperCase()],
+                [messages().listening.duration, formatTime(track.durationMs)],
+                [messages().listening.file, track.path],
               ].map(([label, value]) => (
                 <div key={label}>
                   <dt className="text-caption text-ink-3">{label}</dt>
                   <dd
                     className="bidi selectable mt-1 break-words text-ink"
                   >
-                    {value ?? "Not specified"}
+                    {value || messages().common.notSpecified}
                   </dd>
                 </div>
               ))}
             </dl>
             {track.missing && (
               <p className="mt-4 text-meta text-warning">
-                File unavailable. Reconnect its drive or rescan your library.
+                {messages().listening.fileUnavailable}
               </p>
             )}
             <Button
@@ -191,7 +194,7 @@ export function ListeningPanel() {
               className="mt-6"
               onClick={() => useUi.setState({ editTrackId: track.id })}
             >
-              Edit song information
+              {messages().listening.editInfo}
             </Button>
           </div>
         ) : (
@@ -199,7 +202,7 @@ export function ListeningPanel() {
             <button
               type="button"
               className="block w-full rounded-sm"
-              aria-label="Open full player"
+              aria-label={messages().listening.openFullPlayer}
               onClick={() => navigate({ name: "nowPlaying" })}
             >
               <VinylCover
@@ -240,7 +243,7 @@ export function ListeningPanel() {
               <IconButton
                 icon={Heart}
                 label={
-                  track.favorite ? "Remove from favorites" : "Add to favorites"
+                  track.favorite ? messages().common.removeFromFavorites : messages().common.addToFavorites
                 }
                 aria-pressed={track.favorite}
                 size="sm"
@@ -258,7 +261,7 @@ export function ListeningPanel() {
               >
                 <IconButton
                   icon={MoreHorizontal}
-                  label="Song options"
+                  label={messages().listening.songOptions}
                   size="xs"
                 />
               </DropdownMenuButton>
@@ -272,9 +275,9 @@ export function ListeningPanel() {
               {track.album}
             </button>
             <div className="mt-6 flex items-center justify-between border-t border-line pt-5">
-              <h3 className="text-lead font-bold">Up next</h3>
+              <h3 className="text-lead font-bold">{messages().listening.upNext}</h3>
               <span className="text-caption text-ink-3">
-                {plural(next.length, "track")}
+                {messages().listening.tracks(next.length)}
               </span>
             </div>
             {next.length ? (
@@ -286,7 +289,7 @@ export function ListeningPanel() {
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center gap-3 rounded-sm py-3 text-left hover:bg-raised"
+                      className="flex w-full items-center gap-3 rounded-sm py-3 text-start hover:bg-raised"
                       onClick={() => player.jumpTo(entry.uid)}
                     >
                       <LibraryCover
@@ -316,7 +319,7 @@ export function ListeningPanel() {
               </ul>
             ) : (
               <p className="mt-3 text-meta text-ink-3">
-                Use Play next or Add to queue on any song.
+                {messages().listening.queueHint}
               </p>
             )}
             <button
@@ -324,7 +327,7 @@ export function ListeningPanel() {
               onClick={() => select("queue")}
               className="mt-4 flex w-full items-center justify-end gap-2 text-meta text-ink-3 hover:text-ink"
             >
-              View queue <ArrowUpRight className="size-4" />
+              {messages().listening.viewQueue} <ArrowUpRight className="size-4" />
             </button>
           </div>
         )}

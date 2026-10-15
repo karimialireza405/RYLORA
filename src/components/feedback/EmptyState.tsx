@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { messages } from "@/i18n";
 
 import { cn } from "@/utils/cn";
 
@@ -43,7 +44,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-x-5 gap-y-7" aria-label="Loading" role="status">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-x-5 gap-y-7" aria-label={messages().collections.loading} role="status">
       {Array.from({ length: count }, (_, i) => (
         <div key={i}>
           <Skeleton className="aspect-square w-full" />

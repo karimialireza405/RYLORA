@@ -6,7 +6,7 @@ import { applySnapshot, usePlayer, useProgress } from "@/stores/player";
 import { toast } from "@/stores/toasts";
 import { applyMotionPreference, useUi } from "@/stores/ui";
 import type { Preferences } from "@/types/domain";
-import { plural } from "@/utils/format";
+import { messages } from "@/i18n";
 
 let started: Promise<void> | null = null;
 
@@ -38,28 +38,28 @@ async function start(): Promise<void> {
     api.on("player://state", applySnapshot),
     api.on("player://progress", (p) => useProgress.setState(p)),
     api.on("player://spectrum", pushSpectrum),
-    api.on("player://error", (e) => toast({ tone: "error", title: "Playback problem", description: e.message })),
+    api.on("player://error", (e) => toast({ tone: "error", title: messages().errors.playbackProblem, description: e.message })),
     api.on("library://scan-progress", (p) => useLibrary.setState({ scanning: true, scanProgress: p })),
     api.on("library://scan-finished", (summary) => {
       useLibrary.setState({ scanning: false, scanProgress: null, lastScanSummary: summary });
       if (summary.cancelled) {
-        toast({ tone: "info", title: "Scan stopped" });
+        toast({ tone: "info", title: messages().scan.stopped });
       } else if (summary.addedOrUpdated > 0 || summary.missing > 0) {
         const parts = [
-          summary.addedOrUpdated > 0 && `${plural(summary.addedOrUpdated, "song")} added or updated`,
-          summary.missing > 0 && `${summary.missing} missing`,
+          summary.addedOrUpdated > 0 && messages().scan.addedOrUpdated(summary.addedOrUpdated),
+          summary.missing > 0 && messages().scan.missing(summary.missing),
         ].filter(Boolean);
-        toast({ tone: "success", title: "Library updated", description: parts.join(" · ") });
+        toast({ tone: "success", title: messages().scan.libraryUpdated, description: parts.join(" · ") });
       }
       if (summary.failed.length > 0) {
         toast({
           tone: "error",
-          title: `${plural(summary.failed.length, "file")} couldn't be read`,
+          title: messages().scan.unreadable(summary.failed.length),
           description: summary.failed.slice(0, 2).join("\n") + (summary.failed.length > 2 ? "\n…" : ""),
         });
       }
       if (summary.unavailableFolders.length > 0) {
-        toast({ tone: "error", title: "A library folder is unavailable", description: summary.unavailableFolders.join("\n") });
+        toast({ tone: "error", title: messages().collections.folderUnavailable, description: summary.unavailableFolders.join("\n") });
       }
       scheduleRefresh();
     }),

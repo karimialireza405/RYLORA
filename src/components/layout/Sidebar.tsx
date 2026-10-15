@@ -26,9 +26,11 @@ import { navigate, useRoute, type Route } from "@/stores/navigation";
 import { usePlayer } from "@/stores/player";
 import { openNewPlaylist, useUi } from "@/stores/ui";
 import { cn } from "@/utils/cn";
+import { useT, type Messages } from "@/i18n";
+import { formatNumber } from "@/utils/format";
 
 interface NavItemDef {
-  label: string;
+  label: keyof Messages["nav"];
   icon: LucideIcon;
   route: Route;
   match: (r: Route) => boolean;
@@ -36,19 +38,19 @@ interface NavItemDef {
 
 const MAIN: NavItemDef[] = [
   {
-    label: "Home",
+    label: "home",
     icon: Home,
     route: { name: "home" },
     match: (r) => r.name === "home",
   },
   {
-    label: "Search",
+    label: "search",
     icon: Search,
     route: { name: "search" },
     match: (r) => r.name === "search",
   },
   {
-    label: "Now Playing",
+    label: "nowPlaying",
     icon: Radio,
     route: { name: "nowPlaying" },
     match: (r) => r.name === "nowPlaying",
@@ -57,33 +59,33 @@ const MAIN: NavItemDef[] = [
 
 const LIBRARY: NavItemDef[] = [
   {
-    label: "Songs",
+    label: "songs",
     icon: Music2,
     route: { name: "library", tab: "songs" },
     match: (r) => r.name === "library" && r.tab === "songs",
   },
   {
-    label: "Albums",
+    label: "albums",
     icon: Disc3,
     route: { name: "library", tab: "albums" },
     match: (r) =>
       (r.name === "library" && r.tab === "albums") || r.name === "album",
   },
   {
-    label: "Artists",
+    label: "artists",
     icon: Mic2,
     route: { name: "library", tab: "artists" },
     match: (r) =>
       (r.name === "library" && r.tab === "artists") || r.name === "artist",
   },
   {
-    label: "Favorites",
+    label: "favorites",
     icon: Heart,
     route: { name: "library", tab: "favorites" },
     match: (r) => r.name === "library" && r.tab === "favorites",
   },
   {
-    label: "Recently Added",
+    label: "recentlyAdded",
     icon: Clock,
     route: { name: "library", tab: "recent" },
     match: (r) => r.name === "library" && r.tab === "recent",
@@ -91,6 +93,7 @@ const LIBRARY: NavItemDef[] = [
 ];
 
 export function Sidebar() {
+  const t = useT();
   const route = useRoute();
   const playlists = useLibrary((s) => s.playlists);
   const scanning = useLibrary((s) => s.scanning);
@@ -105,8 +108,8 @@ export function Sidebar() {
 
   return (
     <nav
-      aria-label="Main"
-      className="flex h-full min-h-0 flex-col border-r border-line bg-base"
+      aria-label={t.nav.main}
+      className="flex h-full min-h-0 flex-col border-e border-line bg-base"
     >
       <div
         data-tauri-drag-region
@@ -126,10 +129,10 @@ export function Sidebar() {
           items={MAIN.filter((i) => i.route.name !== "nowPlaying" || hasTrack)}
           route={route}
         />
-        <SectionLabel>Your library</SectionLabel>
+        <SectionLabel>{t.nav.yourLibrary}</SectionLabel>
         <NavGroup items={LIBRARY} route={route} />
 
-        <div className="mt-6 mb-1.5 flex items-center justify-between pr-1 pl-3">
+        <div className="mt-6 mb-1.5 flex items-center justify-between pe-1 ps-3">
           <button
             type="button"
             onClick={() => navigate({ name: "playlists" })}
@@ -138,11 +141,11 @@ export function Sidebar() {
               route.name === "playlists" ? "text-ink-2" : "text-ink-4",
             )}
           >
-            Playlists
+            {t.nav.playlists}
           </button>
           <IconButton
             icon={Plus}
-            label="New playlist"
+            label={t.nav.newPlaylist}
             size="xs"
             onClick={() => openNewPlaylist()}
           />
@@ -159,7 +162,7 @@ export function Sidebar() {
                   data-playlist-id={p.id}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition-colors duration-(--duration-micro)",
+                    "flex h-11 w-full items-center gap-3 rounded-md px-2 text-start transition-colors duration-(--duration-micro)",
                     active
                       ? "bg-raised text-ink"
                       : "text-ink-2 hover:bg-raised/60 hover:text-ink",
@@ -184,7 +187,7 @@ export function Sidebar() {
                       {p.name}
                     </span>
                     <span className="block truncate text-caption text-ink-4">
-                      {p.trackCount} songs
+                      {t.count.songs(p.trackCount)}
                     </span>
                   </span>
                 </button>
@@ -195,17 +198,17 @@ export function Sidebar() {
             <li className="px-3 py-2 text-meta text-ink-4">
               <button
                 type="button"
-                className="text-left hover:text-ink-2"
+                className="text-start hover:text-ink-2"
                 onClick={() => openNewPlaylist()}
               >
-                Create your first playlist
+                {t.nav.firstPlaylist}
               </button>
             </li>
           )}
         </ul>
         {pins.length > 0 && (
           <>
-            <SectionLabel>Pins</SectionLabel>
+            <SectionLabel>{t.nav.pins}</SectionLabel>
             <ul className="space-y-1">
               {pins.map((album) => (
                 <li key={album.id}>
@@ -213,7 +216,7 @@ export function Sidebar() {
                     <button
                       type="button"
                       onClick={() => navigate({ name: "album", id: album.id })}
-                      className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left hover:bg-raised"
+                      className="flex w-full items-center gap-3 rounded-sm px-2 py-2 text-start hover:bg-raised"
                       title={album.title}
                     >
                       <LibraryCover
@@ -239,12 +242,12 @@ export function Sidebar() {
             <div className="flex items-center justify-between text-caption text-ink-3">
               <span role="status">
                 {progress?.phase === "discovering" || !progress
-                  ? "Looking for music…"
-                  : "Indexing library"}
+                  ? t.nav.lookingForMusic
+                  : t.nav.indexing}
               </span>
               {progress && progress.total > 0 && (
                 <span className="tabular" aria-hidden>
-                  {progress.processed}/{progress.total}
+                  {formatNumber(progress.processed)}/{formatNumber(progress.total)}
                 </span>
               )}
             </div>
@@ -273,7 +276,7 @@ export function Sidebar() {
         <NavGroup
           items={[
             {
-              label: "Settings",
+              label: "settings",
               icon: Settings,
               route: { name: "settings" },
               match: (r) => r.name === "settings",
@@ -295,6 +298,7 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 function NavGroup({ items, route }: { items: NavItemDef[]; route: Route }) {
+  const t = useT();
   return (
     <ul className="space-y-0.5">
       {items.map((item) => {
@@ -315,7 +319,7 @@ function NavGroup({ items, route }: { items: NavItemDef[]; route: Route }) {
               {active && (
                 <motion.span
                   layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-md bg-raised before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-blue-soft"
+                  className="absolute inset-0 rounded-md bg-raised before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-blue-soft"
                   transition={{ type: "spring", stiffness: 480, damping: 40 }}
                 ></motion.span>
               )}
@@ -327,7 +331,7 @@ function NavGroup({ items, route }: { items: NavItemDef[]; route: Route }) {
                 strokeWidth={1.7}
                 aria-hidden
               />
-              <span className="relative">{item.label}</span>
+              <span className="relative">{t.nav[item.label]}</span>
             </button>
           </li>
         );

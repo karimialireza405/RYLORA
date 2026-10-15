@@ -39,6 +39,7 @@ import { cn } from "@/utils/cn";
 import { formatRelativeDate, formatTime } from "@/utils/format";
 import type { SortDirection, TrackSortKey } from "@/utils/tracks";
 import { buildTrackMenu } from "./trackMenu";
+import { messages } from "@/i18n";
 
 export type TrackTableVariant = "library" | "album" | "playlist";
 
@@ -153,8 +154,8 @@ export function TrackTable({
       if (t.missing) {
         toast({
           tone: "error",
-          title: "File not found",
-          description: `“${t.title}” is no longer at ${t.path}.`,
+          title: messages().trackTable.fileNotFound,
+          description: messages().trackTable.fileMoved(t.title, t.path),
         });
         return;
       }
@@ -375,7 +376,7 @@ function HeaderRow({
       <button
         type="button"
         onClick={() => onSort(key)}
-        aria-label={`Sort by ${text}`}
+        aria-label={messages().trackTable.sortBy(text)}
         aria-pressed={!!active}
         className={cn(
           "flex items-center gap-1 rounded-xs hover:text-ink",
@@ -397,16 +398,16 @@ function HeaderRow({
     >
       {variant === "playlist" && <div />}
       <div className="text-center">#</div>
-      {cell("title", "Title")}
-      {variant !== "album" && cell("album", "Album")}
+      {cell("title", messages().trackTable.title)}
+      {variant !== "album" && cell("album", messages().trackTable.album)}
       {variant !== "album" &&
         cell(
           "addedAt",
-          variant === "playlist" ? "Added" : "Date added",
+          variant === "playlist" ? messages().trackTable.added : messages().trackTable.dateAdded,
           "hidden @3xl:flex",
         )}
       <div />
-      {cell("durationMs", "Duration", "justify-end", true)}
+      {cell("durationMs", messages().trackTable.duration, "justify-end", true)}
       <div />
     </div>
   );
@@ -459,7 +460,7 @@ const TrackRow = memo(function TrackRow({
         id={id}
         role="option"
         aria-selected={selected}
-        aria-label={`${track.title} by ${track.artist}${track.missing ? ", file missing" : ""}`}
+        aria-label={messages().trackTable.rowLabel(track.title, track.artist, track.missing)}
         onClick={(e) => onClick(index, e)}
         onPointerDown={onPointerDown}
         onDoubleClick={() => onPlay(index)}
@@ -503,7 +504,7 @@ const TrackRow = memo(function TrackRow({
                 "absolute size-4 text-blue-soft group-hover:invisible",
                 paused && "opacity-60",
               )}
-              aria-label={paused ? "Paused" : "Now playing"}
+              aria-label={paused ? messages().trackTable.paused : messages().trackTable.nowPlaying}
             />
           )}
           <button
@@ -513,7 +514,7 @@ const TrackRow = memo(function TrackRow({
               e.stopPropagation();
               onPlay(index);
             }}
-            aria-label={`Play ${track.title}`}
+            aria-label={messages().common.playNamed(track.title)}
             className="invisible absolute inset-0 m-auto flex size-8 items-center justify-center rounded-full text-ink group-hover:visible hover:bg-lifted"
           >
             <Play className="size-4 fill-current" aria-hidden />
@@ -540,7 +541,7 @@ const TrackRow = memo(function TrackRow({
             {(showArtist || track.missing) && (
               <p className="truncate text-meta text-ink-3">
                 {track.missing ? (
-                  <span className="text-warning">File missing</span>
+                  <span className="text-warning">{messages().collections.fileMissing}</span>
                 ) : (
                   <button
                     type="button"
@@ -589,8 +590,8 @@ const TrackRow = memo(function TrackRow({
           }}
           aria-label={
             track.favorite
-              ? `Remove ${track.title} from favorites`
-              : `Add ${track.title} to favorites`
+              ? messages().trackTable.removeNamedFromFavorites(track.title)
+              : messages().trackTable.addNamedToFavorites(track.title)
           }
           aria-pressed={track.favorite}
           className={cn(
@@ -618,7 +619,7 @@ const TrackRow = memo(function TrackRow({
             id={menuId}
             type="button"
             tabIndex={-1}
-            aria-label={`More options for ${track.title}`}
+            aria-label={messages().trackTable.moreOptions(track.title)}
             onClick={(e) => e.stopPropagation()}
             className={cn(
               "flex size-8 items-center justify-center rounded-full text-ink-3 hover:bg-lifted hover:text-ink",

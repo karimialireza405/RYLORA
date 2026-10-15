@@ -1,49 +1,54 @@
-/** Single source for shortcut documentation (settings page + "?" dialog). */
-export const SHORTCUTS: Array<{ group: string; items: Array<[keys: string, action: string]> }> = [
-  {
-    group: "Playback",
-    items: [
-      ["Space", "Play / pause"],
-      ["Ctrl + →", "Next track"],
-      ["Ctrl + ←", "Previous track / restart"],
-      ["Shift + → / ←", "Seek 5 seconds"],
-      ["Ctrl + ↑ / ↓", "Volume up / down"],
-      ["M", "Mute / unmute"],
-      ["S", "Shuffle on / off"],
-      ["R", "Cycle repeat (off → all → one)"],
-      ["Ctrl + L", "Favorite the current song"],
-    ],
-  },
-  {
-    group: "Navigation",
-    items: [
-      ["Ctrl + O", "Add your music"],
-      ["Ctrl + K  or  /", "Search"],
-      ["Alt + ← / →", "Back / forward"],
-      ["Ctrl + 1 … 5", "Home, Songs, Albums, Artists, Playlists"],
-      ["Q", "Show / hide queue"],
-      ["F11", "Immersive mode"],
-      ["Ctrl + ,", "Settings"],
-      ["?", "Show keyboard shortcuts"],
-    ],
-  },
-  {
-    group: "Lists",
-    items: [
-      ["↑ / ↓", "Move through songs"],
-      ["Shift + ↑ / ↓, Ctrl + click", "Extend selection"],
-      ["Ctrl + A", "Select all"],
-      ["Enter", "Play"],
-      ["Shift + F10", "Song options"],
-      ["Alt + ↑ / ↓", "Reorder (playlists and queue)"],
-      ["Delete", "Remove from playlist"],
-    ],
-  },
-  {
-    group: "Immersive mode",
-    items: [
-      ["F", "Toggle fullscreen"],
-      ["Esc", "Exit"],
-    ],
-  },
-];
+import type { Messages } from "@/i18n";
+
+/** Single source for shortcut documentation (settings page + "?" dialog). Keys are not translated. */
+export function shortcuts(t: Messages): Array<{ group: string; items: Array<[keys: string, action: string]> }> {
+  const s = t.shortcuts;
+  return [
+    {
+      group: s.playback,
+      items: [
+        ["Space", s.playPause],
+        ["Ctrl + →", s.next],
+        ["Ctrl + ←", s.previous],
+        ["Shift + → / ←", s.seek],
+        ["Ctrl + ↑ / ↓", s.volume],
+        ["M", s.mute],
+        ["S", s.shuffle],
+        ["R", s.repeat],
+        ["Ctrl + L", s.favorite],
+      ],
+    },
+    {
+      group: s.navigation,
+      items: [
+        ["Ctrl + O", s.addMusic],
+        [`Ctrl + K  ${s.or}  /`, s.search],
+        ["Alt + ← / →", s.backForward],
+        ["Ctrl + 1 … 5", s.sections],
+        ["Q", s.queue],
+        ["F11", s.immersive],
+        ["Ctrl + ,", s.settings],
+        ["?", s.showShortcuts],
+      ],
+    },
+    {
+      group: s.lists,
+      items: [
+        ["↑ / ↓", s.move],
+        [`Shift + ↑ / ↓, Ctrl + ${s.click}`, s.extend],
+        ["Ctrl + A", s.selectAll],
+        ["Enter", s.play],
+        ["Shift + F10", s.options],
+        ["Alt + ↑ / ↓", s.reorder],
+        ["Delete", s.remove],
+      ],
+    },
+    {
+      group: s.immersiveGroup,
+      items: [
+        ["F", s.fullscreen],
+        ["Esc", s.exit],
+      ],
+    },
+  ];
+}

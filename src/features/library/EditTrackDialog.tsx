@@ -8,6 +8,7 @@ import { refreshLibrary, useLibrary } from "@/stores/library";
 import { useUi } from "@/stores/ui";
 import { toast, notifyError } from "@/stores/toasts";
 import type { Track } from "@/types/domain";
+import { useT } from "@/i18n";
 
 export function EditTrackDialog() {
   const id = useUi((s) => s.editTrackId),
@@ -15,6 +16,7 @@ export function EditTrackDialog() {
   return track ? <EditForm key={track.id} track={track} /> : null;
 }
 function EditForm({ track }: { track: Track }) {
+  const t = useT();
   const [title, setTitle] = useState(track.title),
     [artist, setArtist] = useState(track.artist),
     [album, setAlbum] = useState(track.album),
@@ -36,11 +38,11 @@ function EditForm({ track }: { track: Track }) {
       !album.trim() ||
       !albumArtist.trim()
     ) {
-      setError("Title, artist, album and album artist are required.");
+      setError(t.editTrack.required);
       return;
     }
     if (year && (!/^\d{1,4}$/.test(year) || Number(year) < 1)) {
-      setError("Enter a year between 1 and 9999.");
+      setError(t.editTrack.invalidYear);
       return;
     }
     setSaving(true);
@@ -60,10 +62,10 @@ function EditForm({ track }: { track: Track }) {
       useUi.setState({ editTrackId: null });
       toast({
         tone: "success",
-        title: "Song information saved",
+        title: t.editTrack.saved,
         description: writeToFile
-          ? "Updated in your library and audio file."
-          : "Saved in RYLORA. Your audio file is unchanged.",
+          ? t.editTrack.savedToFile
+          : t.editTrack.savedInLibrary,
       });
     } catch (e) {
       setError(
@@ -83,8 +85,8 @@ function EditForm({ track }: { track: Track }) {
       onOpenChange={(open) => {
         if (!open) close();
       }}
-      title="Edit song information"
-      description="Update how this song appears in your collection."
+      title={t.editTrack.title}
+      description={t.editTrack.description}
       className="w-[min(620px,calc(100vw-48px))]"
     >
       <form
@@ -110,10 +112,10 @@ function EditForm({ track }: { track: Track }) {
                     .then((path) => {
                       if (path) setArtworkPath(path);
                     })
-                    .catch((e) => notifyError("Couldn't choose artwork", e))
+                    .catch((e) => notifyError(t.editTrack.chooseArtworkFailed, e))
                 }
               >
-                Change cover
+                {t.editTrack.changeCover}
               </Button>
               {artworkPath && (
                 <p
@@ -126,7 +128,7 @@ function EditForm({ track }: { track: Track }) {
             </div>
           </div>
           <TextField
-            label="Title"
+            label={t.editTrack.fieldTitle}
             value={title}
             onChange={setTitle}
             autoFocus
@@ -134,33 +136,33 @@ function EditForm({ track }: { track: Track }) {
           />
           <div className="grid grid-cols-2 gap-4">
             <TextField
-              label="Artist"
+              label={t.editTrack.fieldArtist}
               value={artist}
               onChange={setArtist}
               maxLength={512}
             />
             <TextField
-              label="Album artist"
+              label={t.editTrack.fieldAlbumArtist}
               value={albumArtist}
               onChange={setAlbumArtist}
               maxLength={512}
             />
           </div>
           <TextField
-            label="Album"
+            label={t.editTrack.fieldAlbum}
             value={album}
             onChange={setAlbum}
             maxLength={512}
           />
           <div className="grid grid-cols-2 gap-4">
             <TextField
-              label="Year"
+              label={t.editTrack.fieldYear}
               value={year}
               onChange={setYear}
               maxLength={4}
             />
             <TextField
-              label="Genre"
+              label={t.editTrack.fieldGenre}
               value={genre}
               onChange={setGenre}
               maxLength={512}
@@ -175,11 +177,10 @@ function EditForm({ track }: { track: Track }) {
             />
             <span>
               <span className="block font-medium">
-                Also write changes to the audio file
+                {t.editTrack.writeToFile}
               </span>
               <span className="mt-1 block text-ink-3">
-                Default: save only in RYLORA. Enable this to update the file's
-                tags and selected cover.
+                {t.editTrack.writeToFileHint}
               </span>
             </span>
           </label>
@@ -191,15 +192,15 @@ function EditForm({ track }: { track: Track }) {
         )}
         {scanning && (
           <p className="mt-3 text-meta text-ink-3">
-            Wait for the library scan to finish before saving.
+            {t.editTrack.waitForScan}
           </p>
         )}
         <div className="mt-6 flex justify-end gap-3">
           <Button disabled={saving} onClick={close}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button type="submit" variant="primary" disabled={saving || scanning}>
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? t.editTrack.saving : t.editTrack.saveChanges}
           </Button>
         </div>
       </form>

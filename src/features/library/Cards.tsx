@@ -20,9 +20,10 @@ import { navigate } from "@/stores/navigation";
 import { player } from "@/stores/player";
 import type { Album, Artist, Playlist, Track } from "@/types/domain";
 import { cn } from "@/utils/cn";
-import { formatLongDuration, joinMeta, plural } from "@/utils/format";
+import { formatLongDuration, joinMeta } from "@/utils/format";
 import { compareAlbumOrder } from "@/utils/tracks";
 import { playlistSubmenu } from "./trackMenu";
+import { messages } from "@/i18n";
 
 export function albumTracks(albumId: number): Track[] {
   return useLibrary
@@ -32,23 +33,24 @@ export function albumTracks(albumId: number): Track[] {
 }
 
 export function albumMenu(album: Album): MenuEntry[] {
+  const t = messages();
   const ids = () => albumTracks(album.id).map((t) => t.id);
   return [
     {
       type: "item",
-      label: "Play",
+      label: t.menu.play,
       icon: PlayIcon,
       onSelect: () => player.playTracks(ids()),
     },
     {
       type: "item",
-      label: "Play next",
+      label: t.menu.playNext,
       icon: ListEnd,
       onSelect: () => player.playNext(ids()),
     },
     {
       type: "item",
-      label: "Add to queue",
+      label: t.menu.addToQueue,
       icon: ListMusic,
       onSelect: () => player.enqueue(ids()),
     },
@@ -59,15 +61,15 @@ export function albumMenu(album: Album): MenuEntry[] {
       label: pinnedAlbumIds(useUi.getState().prefs.pinnedAlbums).includes(
         album.id,
       )
-        ? "Unpin album"
-        : "Pin album",
+        ? t.menu.unpinAlbum
+        : t.menu.pinAlbum,
       icon: Pin,
       onSelect: () => toggleAlbumPin(album.id),
     },
     { type: "separator" },
     {
       type: "item",
-      label: "Go to artist",
+      label: t.menu.goToArtist,
       icon: Mic2,
       onSelect: () => navigate({ name: "artist", id: album.artistId }),
     },
@@ -127,7 +129,7 @@ export const AlbumCard = memo(function AlbumCard({
             className="w-full"
           />
           <ArtPlayButton
-            label={`Play ${album.title}`}
+            label={messages().common.playNamed(album.title)}
             onPlay={() =>
               player.playTracks(albumTracks(album.id).map((t) => t.id))
             }
@@ -136,8 +138,8 @@ export const AlbumCard = memo(function AlbumCard({
         <button
           type="button"
           onClick={() => navigate({ name: "album", id: album.id })}
-          className="mt-3 block w-full rounded-xs text-left after:absolute after:inset-0 after:content-['']"
-          aria-label={`${album.title} by ${album.artist}`}
+          className="mt-3 block w-full rounded-xs text-start after:absolute after:inset-0 after:content-['']"
+          aria-label={joinMeta([album.title, album.artist])}
           title={joinMeta([album.title, album.artist])}
         >
           <span
@@ -180,8 +182,7 @@ export const ArtistCard = memo(function ArtistCard({
           {artist.name}
         </span>
         <span className="mt-0.5 block truncate text-meta text-ink-3">
-          {plural(artist.albumCount, "album")} ·{" "}
-          {plural(artist.trackCount, "song")}
+          {joinMeta([messages().count.albums(artist.albumCount), messages().count.songs(artist.trackCount)])}
         </span>
       </button>
     </div>
@@ -212,7 +213,7 @@ export const PlaylistCard = memo(function PlaylistCard({
         />
         {playlist.trackCount > 0 && (
           <ArtPlayButton
-            label={`Play ${playlist.name}`}
+            label={messages().common.playNamed(playlist.name)}
             onPlay={async () => {
               const entries = await backend().playlists.entries(playlist.id);
               const map = useLibrary.getState().trackById;
@@ -228,7 +229,7 @@ export const PlaylistCard = memo(function PlaylistCard({
       <button
         type="button"
         onClick={() => navigate({ name: "playlist", id: playlist.id })}
-        className="mt-3 block w-full rounded-xs text-left after:absolute after:inset-0 after:content-['']"
+        className="mt-3 block w-full rounded-xs text-start after:absolute after:inset-0 after:content-['']"
       >
         <span
           className="bidi block truncate text-body font-semibold text-ink"
@@ -236,9 +237,7 @@ export const PlaylistCard = memo(function PlaylistCard({
           {playlist.name}
         </span>
         <span className="mt-0.5 block truncate text-meta text-ink-3">
-          {plural(playlist.trackCount, "song")}
-          {playlist.durationMs > 0 &&
-            ` · ${formatLongDuration(playlist.durationMs)}`}
+          {joinMeta([messages().count.songs(playlist.trackCount), playlist.durationMs > 0 && formatLongDuration(playlist.durationMs)])}
         </span>
       </button>
     </div>
@@ -307,7 +306,7 @@ export function Shelf({
             onClick={onSeeAll}
             className="flex items-center gap-0.5 rounded-xs text-meta font-semibold text-ink-3 hover:text-ink"
           >
-            See all
+            {messages().common.seeAll}
             <ChevronRight className="size-4" aria-hidden />
           </button>
         )}

@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useId, type ReactNode } from "react";
 
 import { cn } from "@/utils/cn";
+import { messages } from "@/i18n";
 
 interface DialogProps {
   open: boolean;
@@ -33,8 +34,8 @@ export function Dialog({ open, onOpenChange, title, description, children, class
           )}
           <div className="mt-5">{children}</div>
           <RadixDialog.Close
-            className="absolute top-4 right-4 inline-flex size-8 items-center justify-center rounded-full text-ink-3 hover:bg-raised hover:text-ink"
-            aria-label="Close"
+            className="absolute top-4 end-4 inline-flex size-8 items-center justify-center rounded-full text-ink-3 hover:bg-raised hover:text-ink"
+            aria-label={messages().common.close}
           >
             <X className="size-4" aria-hidden />
           </RadixDialog.Close>

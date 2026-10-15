@@ -1,33 +1,51 @@
 # Roadmap
 
-Status reflects what is implemented and verified, not intentions.
+Status reflects what is implemented and verified, not intentions. Per-iteration
+notes live next to this file (`*-2026-10-1x.md`).
 
 ## Done
 
 **Foundation & design system** — Tauri 2 + React 19 + strict TypeScript + Tailwind 4
-tokens, bundled fonts, custom title bar, sidebar with animated selection, persistent
-playback bar, toasts, dialogs, menus, tooltips, skeletons, empty states.
+tokens, bundled Urbanist and Vazirmatn fonts, custom title bar, Studio layout with
+a resizable Listening panel (Now playing / Queue / Info), Silver Graphite palette,
+toasts, dialogs, menus, tooltips, skeletons, empty states.
 
-**Screens** — Home (continue listening, recently played/added, favourites,
-playlists, daily picks; onboarding when empty) · Songs / Albums / Artists /
-Favorites / Recently Added · Album · Artist (incl. "Appears on") · Playlists &
-Playlist detail · Search · Queue panel · Now Playing · Immersive mode · Settings.
+**Language** — complete Persian and English interface (`src/i18n`, Persian is the
+default). Persian uses a right-to-left layout, Persian digits and Solar Hijri dates.
+Mixed Persian/Latin metadata keeps correct word order and aligns with the interface.
+Media controls (transport, timeline, volume) stay left-to-right in both languages,
+following established platform convention.
+
+**Screens** — Home (continue listening, recently added) · Songs / Albums / Artists /
+Favorites / Recently Added (grid or list, persistent sorting incl. most played) ·
+Album · Artist (incl. "Appears on") · Playlists & Playlist detail · Search · Queue ·
+Now Playing · Immersive mode · Settings.
+
+**Covers** — paper record sleeve with a matching vinyl disc everywhere; cover-driven
+accent colours; audio-reactive cover pulse.
 
 **Audio engine** — rodio + symphonia behind `AudioBackend`; play/pause/seek/next/
 previous/volume/mute/shuffle/repeat; queue editing; error skip; device-loss
-recovery; seek timeout guard; real FFT spectrum visualizer.
+recovery; seek timeout guard; real FFT feeding the particle-field visualizer and
+seek ribbon.
 
-**Library** — folder add/remove (with confirmation), incremental background scan,
-lofty metadata with fallbacks, artwork cache + accent extraction, missing-file
-tracking, loose-file import (open files / drag & drop), favourites, play history.
+**Library** — Add music dialog (files or folders, Ctrl+O), drag & drop, incremental
+background scan, lofty metadata with fallbacks, sidecar `cover.jpg`/`folder.png`
+artwork, missing-file tracking, favourites, play history, album pins, metadata
+editor (library-side by default; optional safe write to file tags), library-side
+cleanup of download-site adverts and broken Persian encoding in tags.
 
-**Persistence** — SQLite with migrations; playlists (create, rename, delete,
-add, remove, reorder), favourites, history, preferences, playback session.
+**Persistence** — SQLite with migrations (001 initial, 002 metadata edits);
+playlists (create, rename, delete, add, remove, reorder), favourites, history,
+preferences, playback session.
 
 **Windows integration** — single instance, window size/position memory, native
-dialogs, drag & drop, NSIS installer. System Media Transport Controls (media keys,
-Windows media flyout with artwork and timeline) are implemented and compile;
-**runtime verification is pending** (see Known limitations).
+dialogs, drag & drop, NSIS installer. System Media Transport Controls verified on
+2026-10-15 against the running app through the Windows session manager: title,
+artist, album, playing state, timeline and cover thumbnail are published, and
+Play, Pause, Next and Previous sent through SMTC (the media-key path) drive the
+player. The cover previously used a `file:///` URI, which SMTC does not accept; it
+now loads through `StorageFile`.
 
 **Lyrics** — embedded unsynchronised lyrics (ID3 USLT, Vorbis LYRICS, MP4 ©lyr).
 
@@ -35,16 +53,17 @@ Windows media flyout with artwork and timeline) are implemented and compile;
 
 1. **Gapless playback** — pre-append the next source to the same rodio `Player`
    (or a dedicated symphonia → cpal pipeline) and verify sample-accurate joins.
-2. **Equalizer** — a real biquad filter chain in the `TapSource` path; the UI will
-   only appear once it affects audio.
+2. **Equalizer** — a real biquad filter chain in the audio path; the UI will only
+   appear once it affects audio.
 3. **Output device selection** — enumerate cpal devices; persist the choice.
 4. **File watching** — `notify` crate to pick up changes without a rescan.
 5. **Synced lyrics** (LRC sidecars / SYLT) with highlighted lines.
 6. **Tray icon** with transport controls and close-to-tray option.
-7. **Smart collections** — most played, never played, by genre/decade.
+7. **Smart collections** — never played, by genre/decade.
 8. **Large-library tuning** — measure 50k+ tracks; consider paging the snapshot
    and FTS5 search if the in-memory approach shows strain.
-9. **Code signing** for the installer (requires a certificate).
+9. **Bundle size** — split rarely used routes (frontend JS is ~735 kB before gzip).
+10. **Code signing** for the installer (requires a certificate).
 
 ## Known limitations
 
@@ -54,6 +73,5 @@ Windows media flyout with artwork and timeline) are implemented and compile;
   of tracks, not yet measured beyond that.
 * The Windows media flyout timeline updates on state changes (play/pause/seek/
   track change), not continuously.
+* Error messages produced by the Rust backend are English in both languages.
 * Installer is unsigned (SmartScreen will warn).
-* Media keys / Windows media flyout (SMTC) have not yet been exercised in a
-  running build.

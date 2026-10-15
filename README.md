@@ -19,11 +19,13 @@ is tracked.
 * **Now Playing** and full-window **Immersive mode** lit by the album art.
 * **Fast local search** across songs, albums, artists and playlists.
 * **Keyboard-first**: global shortcuts (press `?` in the app), accessible menus,
-  visible focus, reduced-motion support, Persian/RTL titles.
+  visible focus, reduced-motion support.
+* **Persian and English interface**: Persian by default, with a right-to-left
+  layout, Persian digits and Solar Hijri dates; switch in Settings → Language.
 * **Windows-native touches**: custom title bar with standard window behaviour,
   native file/folder pickers, drag & drop, single instance, remembered window
-  size. Windows media-key / flyout integration is implemented (verification
-  pending — see the roadmap).
+  size, Windows media keys and media flyout (title, cover, timeline,
+  play/pause/next/previous).
 
 ## Quick start
 
@@ -90,4 +92,4 @@ scripts/             test-media generator
 
 Tauri 2 · Rust · rodio/symphonia · lofty · SQLite (rusqlite) · React 19 ·
 TypeScript (strict) · Vite · Tailwind CSS 4 · Radix UI · Motion · Zustand ·
-TanStack Virtual · Lucide · Manrope, Syne & Vazirmatn (bundled, SIL OFL).
+TanStack Virtual · Lucide · Urbanist & Vazirmatn (bundled, SIL OFL).

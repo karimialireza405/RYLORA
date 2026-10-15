@@ -19,11 +19,12 @@ import {
 import { backend } from "@/services/backend";
 import { useLibrary } from "@/stores/library";
 import { prefEnabled, setPreference, useUi } from "@/stores/ui";
-import { plural } from "@/utils/format";
-import { SUPPORTED_FORMAT_LABEL } from "@/utils/formats";
+import { usePreferredLanguage, useT } from "@/i18n";
 import { ShortcutsTable } from "./ShortcutsDialog";
 
 export function SettingsPage() {
+  const t = useT();
+  const lang = usePreferredLanguage();
   const prefs = useUi((s) => s.prefs);
   const folders = useLibrary((s) => s.folders);
   const scanning = useLibrary((s) => s.scanning);
@@ -31,16 +32,28 @@ export function SettingsPage() {
 
   return (
     <Page className="max-w-[880px]">
-      <PageHeader title="Settings" />
+      <PageHeader title={t.settings.title} />
+
+      <Section title={t.settings.language} description={t.settings.languageHint}>
+        <Segmented
+          label={t.settings.language}
+          value={lang}
+          onChange={(v) => void setPreference("language", v)}
+          options={[
+            { value: "fa", label: "فارسی" },
+            { value: "en", label: "English" },
+          ]}
+        />
+      </Section>
 
       <Section
-        title="Music library"
-        description={`RYLORA indexes ${SUPPORTED_FORMAT_LABEL} files in these folders. Importing and scanning leave your files in place. Song edits are saved in RYLORA unless you choose to write file tags.`}
+        title={t.settings.musicLibrary}
+        description={t.settings.libraryDescription(t.common.supportedFormats)}
       >
         {folders.length === 0 ? (
           <div className="flex items-center gap-4 rounded-lg bg-deep p-4 ring-1 ring-line ring-inset">
             <FolderOpen className="size-5 shrink-0 text-ink-3" aria-hidden />
-            <p className="flex-1 text-body text-ink-2">No folders yet.</p>
+            <p className="flex-1 text-body text-ink-2">{t.settings.noFolders}</p>
           </div>
         ) : (
           <ul className="divide-y divide-line overflow-hidden rounded-lg bg-deep ring-1 ring-line ring-inset">
@@ -54,7 +67,7 @@ export function SettingsPage() {
                 ) : (
                   <AlertTriangle
                     className="size-5 shrink-0 text-warning"
-                    aria-label="Unavailable"
+                    aria-label={t.settings.unavailable}
                   />
                 )}
                 <div className="min-w-0 flex-1">
@@ -66,13 +79,13 @@ export function SettingsPage() {
                   </p>
                   <p className="text-meta text-ink-3">
                     {f.available
-                      ? plural(f.trackCount, "song")
-                      : "Not reachable — is the drive connected? Its songs are kept and marked missing."}
+                      ? t.count.songs(f.trackCount)
+                      : t.settings.unreachable}
                   </p>
                 </div>
                 <IconButton
                   icon={Trash2}
-                  label={`Remove ${f.path}`}
+                  label={t.settings.removeNamed(f.path)}
                   size="sm"
                   className="hover:text-danger"
                   onClick={() => void removeFolderInteractive(f)}
@@ -88,39 +101,39 @@ export function SettingsPage() {
             icon={FolderPlus}
             onClick={() => void addFolderInteractive()}
           >
-            Add folder
+            {t.settings.addFolder}
           </Button>
           <Button
             icon={RefreshCw}
             onClick={() => void rescanLibrary()}
             disabled={scanning || folders.length === 0}
           >
-            {scanning ? "Scanning…" : "Rescan"}
+            {scanning ? t.settings.scanning : t.settings.rescan}
           </Button>
           {scanning && (
             <Button
               variant="ghost"
               onClick={() => void backend().library.cancelScan()}
             >
-              Stop scan
+              {t.settings.stopScan}
             </Button>
           )}
           <span className="ml-auto text-meta text-ink-3">
-            {plural(tracks, "song")} indexed
+            {t.settings.indexed(tracks)}
           </span>
         </div>
         <div className="mt-3 border-t border-line pt-1">
           <Switch
-            label="Scan for changes on launch"
-            description="Picks up new, changed and removed files each time RYLORA starts. Unchanged files are skipped, so it is quick."
+            label={t.settings.scanOnLaunch}
+            description={t.settings.scanOnLaunchHint}
             checked={prefEnabled(prefs, "scanOnStartup")}
             onChange={(v) =>
               void setPreference("scanOnStartup", v ? "true" : "false")
             }
           />
           <Switch
-            label="Clean up download-site tags"
-            description="Removes website addresses, Telegram handles and site names from titles, and repairs garbled Persian text. Only RYLORA's library changes; your music files stay untouched. Switching this re-reads the library."
+            label={t.settings.cleanTags}
+            description={t.settings.cleanTagsHint}
             checked={prefEnabled(prefs, "cleanTags")}
             onChange={(v) =>
               void setPreference("cleanTags", v ? "true" : "false")
@@ -129,39 +142,39 @@ export function SettingsPage() {
         </div>
       </Section>
 
-      <Section title="Appearance">
-        <Row label="Record covers">
-          Songs, albums and playlists share a sleeve and disc in every view.
+      <Section title={t.settings.appearance}>
+        <Row label={t.settings.recordCovers}>
+          {t.settings.recordCoversHint}
         </Row>
         <div className="flex items-center justify-between gap-6 py-3">
           <div>
-            <p className="text-body font-medium text-ink">Motion</p>
+            <p className="text-body font-medium text-ink">{t.settings.motion}</p>
             <p className="mt-0.5 text-meta text-ink-3">
-              “System” follows Windows’ animation setting.
+              {t.settings.motionHint}
             </p>
           </div>
           <Segmented
-            label="Motion"
+            label={t.settings.motion}
             value={prefs.motion ?? "system"}
             onChange={(v) => void setPreference("motion", v)}
             options={[
-              { value: "system", label: "System" },
-              { value: "reduced", label: "Reduced" },
-              { value: "full", label: "Full" },
+              { value: "system", label: t.settings.motionSystem },
+              { value: "reduced", label: t.settings.motionReduced },
+              { value: "full", label: t.settings.motionFull },
             ]}
           />
         </div>
         <Switch
-          label="Artwork lighting"
-          description="Tint Now Playing and Immersive mode with color from the current album art."
+          label={t.settings.artworkLighting}
+          description={t.settings.artworkLightingHint}
           checked={prefEnabled(prefs, "ambientBackground")}
           onChange={(v) =>
             void setPreference("ambientBackground", v ? "true" : "false")
           }
         />
         <Switch
-          label="Audio visualizer"
-          description="Live spectrum analysed from the audio that is playing. Hidden when motion is reduced."
+          label={t.settings.visualizer}
+          description={t.settings.visualizerHint}
           checked={prefEnabled(prefs, "visualizer")}
           onChange={(v) =>
             void setPreference("visualizer", v ? "true" : "false")
@@ -169,34 +182,31 @@ export function SettingsPage() {
         />
       </Section>
 
-      <Section title="Playback">
-        <Row label="Resume where you left off">
-          Your queue, position, volume and repeat mode are restored on launch.
+      <Section title={t.settings.playback}>
+        <Row label={t.settings.resume}>
+          {t.settings.resumeHint}
         </Row>
-        <Row label="Output">
-          Plays through the Windows default audio device. If it changes or
-          disconnects, RYLORA reconnects on the next track.
+        <Row label={t.settings.output}>
+          {t.settings.outputHint}
         </Row>
       </Section>
 
-      <Section title="Keyboard shortcuts">
+      <Section title={t.settings.shortcuts}>
         <ShortcutsTable />
       </Section>
 
-      <Section title="About">
+      <Section title={t.settings.about}>
         <div className="flex items-center gap-4">
           <img src={mark} alt="" className="size-12" />
           <div>
             <p className="caps glow text-[15px] tracking-[0.34em]">RYLORA</p>
             <p className="text-meta text-ink-3">
-              Version 0.1.0 · Feel every note.
+              {t.app.version("0.1.0")} · {t.app.tagline}
             </p>
           </div>
         </div>
         <p className="mt-4 max-w-[60ch] text-body text-ink-3">
-          Offline-first. RYLORA makes no network requests and collects no
-          telemetry — your library, playlists and listening history stay on this
-          computer.
+          {t.settings.privacy}
         </p>
       </Section>
     </Page>

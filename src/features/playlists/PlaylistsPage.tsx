@@ -6,29 +6,30 @@ import { Button } from "@/components/ui/Button";
 import { CardGrid, PlaylistCard } from "@/features/library/Cards";
 import { useLibrary } from "@/stores/library";
 import { openNewPlaylist } from "@/stores/ui";
-import { plural } from "@/utils/format";
+import { useT } from "@/i18n";
 
 export function PlaylistsPage() {
+  const t = useT();
   const playlists = useLibrary((s) => s.playlists);
   return (
     <Page>
       <PageHeader
-        title="Playlists"
-        subtitle={playlists.length ? plural(playlists.length, "playlist") : undefined}
+        title={t.playlists.title}
+        subtitle={playlists.length ? t.count.playlists(playlists.length) : undefined}
         actions={
           <Button variant="primary" icon={Plus} onClick={() => openNewPlaylist()}>
-            New playlist
+            {t.playlists.newPlaylist}
           </Button>
         }
       />
       {playlists.length === 0 ? (
         <EmptyState
           icon={ListMusic}
-          title="Make your first playlist"
-          description="Collect songs for a mood, a moment or a long drive. Right-click any song and choose “Add to playlist”."
+          title={t.playlists.emptyTitle}
+          description={t.playlists.emptyHint}
         >
           <Button variant="primary" icon={Plus} onClick={() => openNewPlaylist()}>
-            New playlist
+            {t.playlists.newPlaylist}
           </Button>
         </EmptyState>
       ) : (
@@ -41,7 +42,7 @@ export function PlaylistsPage() {
             <span className="flex size-12 items-center justify-center rounded-full bg-raised transition-colors group-hover:bg-lifted">
               <Plus className="size-6" aria-hidden />
             </span>
-            <span className="text-body font-semibold">New playlist</span>
+            <span className="text-body font-semibold">{t.playlists.newPlaylist}</span>
           </button>
           {playlists.map((p) => (
             <PlaylistCard key={p.id} playlist={p} />

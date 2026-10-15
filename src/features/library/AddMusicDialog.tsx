@@ -16,15 +16,15 @@ import { notifyError } from "@/stores/toasts";
 import { useLibrary } from "@/stores/library";
 import { useUi } from "@/stores/ui";
 import { navigate } from "@/stores/navigation";
-import { plural } from "@/utils/format";
-import { SUPPORTED_FORMAT_LABEL } from "@/utils/formats";
 import {
   addFilesInteractive,
   addFolderInteractive,
   type ImportOutcome,
 } from "./actions";
+import { useT } from "@/i18n";
 
 export function AddMusicDialog() {
+  const t = useT();
   const open = useUi((s) => s.addMusicOpen);
   const scanning = useLibrary((s) => s.scanning);
   const importing = useLibrary((s) => s.importing);
@@ -58,8 +58,8 @@ export function AddMusicDialog() {
     <Dialog
       open={open}
       onOpenChange={(addMusicOpen) => useUi.setState({ addMusicOpen })}
-      title="Add music"
-      description="Choose songs or a folder from your computer."
+      title={t.addMusicDialog.title}
+      description={t.addMusicDialog.description}
       className="w-[min(520px,calc(100vw-48px))] p-8"
     >
       <div className="space-y-3">
@@ -67,7 +67,7 @@ export function AddMusicDialog() {
           type="button"
           disabled={busy}
           onClick={() => void choose(false)}
-          className="group flex w-full items-center gap-4 rounded-lg bg-raised p-5 text-left ring-1 ring-line-strong transition-colors hover:bg-lifted disabled:opacity-50"
+          className="group flex w-full items-center gap-4 rounded-lg bg-raised p-5 text-start ring-1 ring-line-strong transition-colors hover:bg-lifted disabled:opacity-50"
         >
           <FileAudio
             className="size-6 shrink-0 text-blue-soft"
@@ -76,10 +76,10 @@ export function AddMusicDialog() {
           />
           <span className="min-w-0 flex-1">
             <span className="block text-lead font-semibold text-ink">
-              Choose music files
+              {t.addMusicDialog.filesTitle}
             </span>
             <span className="mt-1 block text-meta text-ink-3">
-              Add one song or select a whole collection.
+              {t.addMusicDialog.filesHint}
             </span>
           </span>
           <ChevronRight className="size-4 text-ink-3" aria-hidden />
@@ -88,7 +88,7 @@ export function AddMusicDialog() {
           type="button"
           disabled={busy}
           onClick={() => void choose(true)}
-          className="group flex w-full items-center gap-4 rounded-lg p-5 text-left ring-1 ring-line-strong transition-colors hover:bg-raised disabled:opacity-50"
+          className="group flex w-full items-center gap-4 rounded-lg p-5 text-start ring-1 ring-line-strong transition-colors hover:bg-raised disabled:opacity-50"
         >
           <FolderPlus
             className="size-6 shrink-0 text-ink-2"
@@ -97,10 +97,10 @@ export function AddMusicDialog() {
           />
           <span className="min-w-0 flex-1">
             <span className="block text-lead font-semibold text-ink">
-              Choose a music folder
+              {t.addMusicDialog.folderTitle}
             </span>
             <span className="mt-1 block text-meta text-ink-3">
-              Include subfolders and pick up changes on rescan.
+              {t.addMusicDialog.folderHint}
             </span>
           </span>
           <ChevronRight className="size-4 text-ink-3" aria-hidden />
@@ -117,12 +117,12 @@ export function AddMusicDialog() {
           />
           <span>
             {importing
-              ? "Reading your music and cover art…"
+              ? t.addMusicDialog.readingMusic
               : picking
-                ? "Choose your music in the file picker…"
+                ? t.addMusicDialog.useFilePicker
                 : progress?.total
-                  ? `Adding music · ${progress.processed} / ${progress.total}`
-                  : "Looking for music in your folder…"}
+                  ? t.addMusicDialog.progress(progress.processed, progress.total)
+                  : t.addMusicDialog.lookingInFolder}
           </span>
         </div>
       )}
@@ -130,7 +130,7 @@ export function AddMusicDialog() {
         <div className="mt-3">
           <div
             role="progressbar"
-            aria-label="Adding music"
+            aria-label={t.addMusicDialog.progressLabel}
             aria-valuemin={0}
             aria-valuemax={progress?.total || 100}
             aria-valuenow={progress?.total ? progress.processed : undefined}
@@ -152,25 +152,24 @@ export function AddMusicDialog() {
             onClick={() =>
               void backend()
                 .library.cancelScan()
-                .catch((e) => notifyError("Couldn't stop scan", e))
+                .catch((e) => notifyError(t.addMusicDialog.stopScanFailed, e))
             }
           >
-            Stop scan
+            {t.addMusicDialog.stopScan}
           </Button>
         </div>
       )}
       {folderStarted && !scanning && summary && (
         <div role="status" className="mt-5 rounded-lg bg-raised p-4 text-meta">
           <p className="font-semibold">
-            {summary.cancelled ? "Scan stopped" : "Folder scan complete"}
+            {summary.cancelled ? t.addMusicDialog.scanStopped : t.addMusicDialog.scanComplete}
           </p>
           <p className="mt-2 text-ink-3">
-            {summary.addedOrUpdated} added or updated · {summary.unchanged}{" "}
-            unchanged · {summary.failed.length} unreadable
+            {t.addMusicDialog.scanCounts(summary.addedOrUpdated, summary.unchanged, summary.failed.length)}
           </p>
           {summary.failed.length > 0 && (
             <details className="mt-3">
-              <summary>Unreadable files</summary>
+              <summary>{t.addMusicDialog.unreadableFiles}</summary>
               <ul className="mt-2 max-h-28 overflow-y-auto break-all">
                 {summary.failed.map((path) => (
                   <li key={path}>{path}</li>
@@ -186,7 +185,7 @@ export function AddMusicDialog() {
               navigate({ name: "library", tab: "recent" });
             }}
           >
-            View songs
+            {t.addMusicDialog.viewSongs}
           </Button>
         </div>
       )}
@@ -194,20 +193,19 @@ export function AddMusicDialog() {
         <div role="status" className="mt-5 rounded-lg bg-raised p-4">
           <div className="flex items-center gap-2 text-body text-ink">
             <Check className="size-4 text-blue-soft" aria-hidden />
-            {plural(result.trackIds.length, "song")} ready in your library
+            {t.importing.readyInLibrary(result.trackIds.length)}
           </div>
           {result.rejected.length > 0 && (
             <p className="mt-2 text-meta text-ink-3">
-              {plural(result.rejected.length, "file")} could not be read.
+              {t.addMusicDialog.couldNotRead(result.rejected.length)}
             </p>
           )}
           <p className="mt-2 text-meta text-ink-3">
-            {result.added} newly added · {result.existing} already in your
-            library
+            {t.addMusicDialog.importCounts(result.added, result.existing)}
           </p>
           {result.rejected.length > 0 && (
             <details className="mt-3 text-meta text-ink-3">
-              <summary>Unreadable files</summary>
+              <summary>{t.addMusicDialog.unreadableFiles}</summary>
               <ul className="mt-2 max-h-28 overflow-y-auto break-all">
                 {result.rejected.map((path) => (
                   <li key={path}>{path}</li>
@@ -227,7 +225,7 @@ export function AddMusicDialog() {
                 navigate({ name: "nowPlaying" });
               }}
             >
-              Play now
+              {t.addMusicDialog.playNow}
             </Button>
             <Button
               size="sm"
@@ -236,14 +234,14 @@ export function AddMusicDialog() {
                 navigate({ name: "library", tab: "recent" });
               }}
             >
-              View songs
+              {t.addMusicDialog.viewSongs}
             </Button>
           </div>
         </div>
       )}
       <p className="mt-6 text-caption leading-5 text-ink-3">
-        {SUPPORTED_FORMAT_LABEL}.<br />
-        You can also drop files or folders anywhere in the app.
+        {t.common.supportedFormats}.<br />
+        {t.addMusicDialog.dropHint}
       </p>
     </Dialog>
   );

@@ -12,7 +12,8 @@ import { player, usePlayer } from "@/stores/player";
 import { useUi } from "@/stores/ui";
 import type { QueueEntry, Track } from "@/types/domain";
 import { cn } from "@/utils/cn";
-import { formatLongDuration, formatTime, plural } from "@/utils/format";
+import { formatLongDuration, formatTime, joinMeta } from "@/utils/format";
+import { messages } from "@/i18n";
 
 const ROW = 56;
 
@@ -62,7 +63,7 @@ export function QueuePanel({ embedded = false }: { embedded?: boolean }) {
   return (
     <motion.aside
       id="queue-panel"
-      aria-label="Queue"
+      aria-label={messages().queue.title}
       data-track-drop="queue"
       initial={{ x: 24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
@@ -70,26 +71,26 @@ export function QueuePanel({ embedded = false }: { embedded?: boolean }) {
       transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
       className={cn(
         "flex h-full shrink-0 flex-col bg-base",
-        embedded ? "w-full" : "w-[300px] border-l border-line",
+        embedded ? "w-full" : "w-[300px] border-s border-line",
       )}
     >
       <div
-        className="flex h-[var(--titlebar-height)] shrink-0 items-center justify-between pr-2 pl-5"
+        className="flex h-[var(--titlebar-height)] shrink-0 items-center justify-between pe-2 ps-5"
         data-tauri-drag-region
       >
         <h2 className="font-display text-title font-normal tracking-[-0.01em]">
-          Queue
+          {messages().queue.title}
         </h2>
         <div className="flex items-center gap-1">
           {upcoming.length > 0 && (
             <Button variant="ghost" size="sm" onClick={player.clearQueue}>
-              Clear
+              {messages().queue.clear}
             </Button>
           )}
           {!embedded && (
             <IconButton
               icon={X}
-              label="Close queue"
+              label={messages().queue.close}
               shortcut="Q"
               size="sm"
               onClick={() => useUi.setState({ queueOpen: false })}
@@ -100,9 +101,9 @@ export function QueuePanel({ embedded = false }: { embedded?: boolean }) {
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
         {current && (
-          <section aria-label="Now playing" className="mb-4">
+          <section aria-label={messages().queue.nowPlaying} className="mb-4">
             <p className="px-2 pt-2 pb-2 caps text-[10px] text-ink-4 uppercase">
-              Now playing
+              {messages().queue.nowPlaying}
             </p>
             <div className="flex items-center gap-3 rounded-lg bg-raised/70 p-2.5">
               <LibraryCover
@@ -127,17 +128,16 @@ export function QueuePanel({ embedded = false }: { embedded?: boolean }) {
         {upcoming.length === 0 ? (
           <EmptyState
             icon={ListMusic}
-            title="Nothing up next"
-            description="Use “Play next” or “Add to queue” on any song to line it up here."
+            title={messages().queue.emptyTitle}
+            description={messages().queue.emptyHint}
             className="py-10"
           />
         ) : (
-          <section aria-label="Up next">
+          <section aria-label={messages().queue.upNext}>
             <div className="flex items-baseline justify-between px-2 pb-2">
-              <p className="caps text-[10px] text-ink-4 uppercase">Up next</p>
+              <p className="caps text-[10px] text-ink-4 uppercase">{messages().queue.upNext}</p>
               <p className="text-caption text-ink-4">
-                {plural(upcoming.length, "song")} ·{" "}
-                {formatLongDuration(remainingMs)}
+                {joinMeta([messages().count.songs(upcoming.length), formatLongDuration(remainingMs)])}
               </p>
             </div>
             <ul
@@ -208,11 +208,11 @@ function QueueRow({
   dragHandle: ReturnType<ReturnType<typeof useDragReorder>["handleProps"]>;
   onMoveBy: (delta: number) => void;
 }) {
-  const title = track?.title ?? "Unavailable track";
+  const title = track?.title ?? messages().queue.unavailableTrack;
   return (
     <div
       className={cn(
-        "group flex h-14 items-center gap-2 rounded-md pr-1 pl-0.5 transition-colors hover:bg-raised/70",
+        "group flex h-14 items-center gap-2 rounded-md pe-1 ps-0.5 transition-colors hover:bg-raised/70",
         dragging && "bg-raised shadow-popover",
         track?.missing && "opacity-45",
       )}
@@ -233,8 +233,8 @@ function QueueRow({
             onMoveBy(e.key === "ArrowUp" ? -1 : 1);
           }
         }}
-        aria-label={`Play ${title}, position ${index + 1} in queue. Alt plus arrow keys to move.`}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left"
+        aria-label={messages().queue.rowLabel(title, index + 1)}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-start"
       >
         <LibraryCover
           hash={track?.artwork}
@@ -257,7 +257,7 @@ function QueueRow({
       </span>
       <IconButton
         icon={X}
-        label={`Remove ${title} from queue`}
+        label={messages().queue.removeNamed(title)}
         size="xs"
         noTooltip
         className="opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"

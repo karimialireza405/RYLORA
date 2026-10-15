@@ -13,10 +13,12 @@ import { playlistSubmenu } from "@/features/library/trackMenu";
 import { useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
-import { formatLongDuration, plural } from "@/utils/format";
+import { formatLongDuration, joinMeta } from "@/utils/format";
+import { useT } from "@/i18n";
 import { compareAlbumOrder } from "@/utils/tracks";
 
 export function AlbumPage({ id }: { id: number }) {
+  const t = useT();
   const album = useLibrary((s) => s.albumById.get(id));
   const allTracks = useLibrary((s) => s.tracks);
   const albums = useLibrary((s) => s.albums);
@@ -36,8 +38,8 @@ export function AlbumPage({ id }: { id: number }) {
     return (
       <Page>
         {loaded && (
-          <EmptyState icon={Disc3} title="Album not found" description="It may have been removed from your library.">
-            <Button onClick={() => navigate({ name: "library", tab: "albums" })}>Browse albums</Button>
+          <EmptyState icon={Disc3} title={t.album.notFound} description={t.album.notFoundHint}>
+            <Button onClick={() => navigate({ name: "library", tab: "albums" })}>{t.album.browse}</Button>
           </EmptyState>
         )}
       </Page>
@@ -49,9 +51,9 @@ export function AlbumPage({ id }: { id: number }) {
     <div className="pb-16">
       <CollectionHero
         accent={album.accent}
-        overline="Album"
+        overline={t.album.overline}
         title={album.title}
-        art={<VinylCover fullBleed hash={album.artwork} seed={album.title} artist={album.artist} title={album.title} accent={album.accent} out={isCurrent} spinning={isCurrent && playing} style={{ height: "232px", width: "calc(232px * 1.3)" }} alt={`${album.title} cover`} />}
+        art={<VinylCover fullBleed hash={album.artwork} seed={album.title} artist={album.artist} title={album.title} accent={album.accent} out={isCurrent} spinning={isCurrent && playing} style={{ height: "232px", width: "calc(232px * 1.3)" }} alt={t.album.coverAlt(album.title)} />}
         meta={
           <>
             <button type="button" onClick={() => navigate({ name: "artist", id: album.artistId })} className="bidi font-semibold text-ink hover:underline">
@@ -70,13 +72,13 @@ export function AlbumPage({ id }: { id: number }) {
               </>
             )}
             <Dot />
-            <span>{plural(album.trackCount, "song")}, {formatLongDuration(album.durationMs)}</span>
+            <span>{joinMeta([t.count.songs(album.trackCount), formatLongDuration(album.durationMs)])}</span>
           </>
         }
         actions={
           <>
             <Button variant="primary" icon={Play} disabled={!ids.length} onClick={() => player.playTracks(ids)}>
-              Play
+              {t.common.play}
             </Button>
             <Button
               variant="secondary"
@@ -87,35 +89,35 @@ export function AlbumPage({ id }: { id: number }) {
                 player.playTracks(ids, Math.floor(Math.random() * ids.length));
               }}
             >
-              Shuffle
+              {t.common.shuffle}
             </Button>
             <DropdownMenuButton
               align="start"
               entries={() => [
-                { type: "item", label: "Play next", icon: ListEnd, onSelect: () => player.playNext(ids) },
-                { type: "item", label: "Add to queue", icon: ListMusic, onSelect: () => player.enqueue(ids) },
+                { type: "item", label: t.menu.playNext, icon: ListEnd, onSelect: () => player.playNext(ids) },
+                { type: "item", label: t.menu.addToQueue, icon: ListMusic, onSelect: () => player.enqueue(ids) },
                 { type: "separator" },
                 playlistSubmenu(ids),
               ]}
             >
-              <IconButton icon={MoreHorizontal} label="More album options" className="bg-raised/70" />
+              <IconButton icon={MoreHorizontal} label={t.album.moreOptions} className="bg-raised/70" />
             </DropdownMenuButton>
           </>
         }
       />
       <div className="mx-auto w-full max-w-[1680px] px-8">
         <TrackTable
-          label={`${album.title} tracks`}
+          label={t.album.tracksLabel(album.title)}
           variant="album"
           albumArtist={album.artist}
           tracks={tracks}
           onPlay={(i) => playFrom(tracks, i, player.playTracks)}
         />
         {moreByArtist.length > 0 && (
-          <Shelf title={`More by ${album.artist}`} onSeeAll={() => navigate({ name: "artist", id: album.artistId })}>
+          <Shelf title={t.album.moreBy(album.artist)} onSeeAll={() => navigate({ name: "artist", id: album.artistId })}>
             <CardGrid singleRow>
               {moreByArtist.map((a) => (
-                <AlbumCard key={a.id} album={a} subtitle={a.year ? String(a.year) : "Album"} />
+                <AlbumCard key={a.id} album={a} subtitle={a.year ? String(a.year) : t.album.fallbackSubtitle} />
               ))}
             </CardGrid>
           </Shelf>

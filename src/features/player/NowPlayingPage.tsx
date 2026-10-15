@@ -28,6 +28,7 @@ import { LibraryCover } from "@/components/ui/LibraryCover";
 import { cn } from "@/utils/cn";
 import { formatTime } from "@/utils/format";
 import { ProgressBar, TransportControls, VolumeControl } from "./Controls";
+import { messages } from "@/i18n";
 
 export function NowPlayingPage() {
   const current = usePlayer((s) => s.current);
@@ -47,15 +48,15 @@ export function NowPlayingPage() {
       <Page>
         <EmptyState
           icon={Music2}
-          title="Nothing is playing"
-          description="Choose a song, album or playlist to start listening."
+          title={messages().player.nothingPlaying}
+          description={messages().player.nothingPlayingHint}
           className="pt-28"
         >
           <Button
             variant="primary"
             onClick={() => navigate({ name: "library", tab: "songs" })}
           >
-            Browse songs
+            {messages().player.browseSongs}
           </Button>
         </EmptyState>
       </Page>
@@ -76,7 +77,7 @@ export function NowPlayingPage() {
             : "grid-cols-1",
         )}
       >
-        <section aria-label="Now playing" className="flex min-w-0 flex-col">
+        <section aria-label={messages().player.nowPlaying} className="flex min-w-0 flex-col">
           <div className="flex min-h-0 flex-1 flex-wrap items-center gap-7 xl:gap-9">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -103,7 +104,7 @@ export function NowPlayingPage() {
                   accent={track.accent}
                   out
                   spinning={playing && !reduced}
-                  alt={`${track.album} by ${track.artist}`}
+                  alt={messages().player.coverAlt(track.album, track.artist)}
                   className="relative"
                   style={coverSize(
                     showAside
@@ -116,7 +117,7 @@ export function NowPlayingPage() {
 
             <div className="min-w-[240px] flex-1">
               <p className="caps text-[10px] text-ink-3 uppercase">
-                Now playing
+                {messages().player.nowPlaying}
               </p>
               <h1
                 className={cn("bidi",
@@ -146,7 +147,7 @@ export function NowPlayingPage() {
                   {track.album}
                 </button>
                 {track.year && <span> · {track.year}</span>}
-                <span className="ml-2 rounded-xs px-1.5 py-px align-[1px] text-caption font-semibold tracking-wide text-ink-3 uppercase ring-1 ring-line-strong">
+                <span className="ms-2 rounded-xs px-1.5 py-px align-[1px] text-caption font-semibold tracking-wide text-ink-3 uppercase ring-1 ring-line-strong">
                   {track.format}
                 </span>
               </p>
@@ -156,8 +157,8 @@ export function NowPlayingPage() {
                   icon={Heart}
                   label={
                     track.favorite
-                      ? "Remove from favorites"
-                      : "Add to favorites"
+                      ? messages().common.removeFromFavorites
+                      : messages().common.addToFavorites
                   }
                   shortcut="Ctrl+L"
                   aria-pressed={track.favorite}
@@ -171,18 +172,18 @@ export function NowPlayingPage() {
                   align="start"
                   entries={() => [playlistSubmenu([track.id])]}
                 >
-                  <IconButton icon={ListPlus} label="Add to playlist" />
+                  <IconButton icon={ListPlus} label={messages().player.addToPlaylist} />
                 </DropdownMenuButton>
                 <IconButton
                   icon={MicVocal}
-                  label={lyricsOpen ? "Hide lyrics" : "Show lyrics"}
+                  label={lyricsOpen ? messages().player.hideLyrics : messages().player.showLyrics}
                   active={lyricsOpen}
                   aria-pressed={lyricsOpen}
                   onClick={() => useUi.setState({ lyricsOpen: !lyricsOpen })}
                 />
                 <IconButton
                   icon={Maximize2}
-                  label="Immersive mode"
+                  label={messages().common.immersive}
                   shortcut="F11"
                   onClick={() => useUi.setState({ immersive: true })}
                 />
@@ -210,7 +211,7 @@ export function NowPlayingPage() {
         {showAside && (
           <aside
             className="flex min-h-0 flex-col"
-            aria-label={lyricsOpen ? "Lyrics" : "Up next"}
+            aria-label={lyricsOpen ? messages().player.lyrics : messages().player.upNext}
           >
             {lyricsOpen ? <LyricsPanel track={track} /> : <UpNext />}
           </aside>
@@ -283,14 +284,14 @@ function NextUpLine() {
     <button
       type="button"
       onClick={() => useUi.setState({ queueOpen: true })}
-      className="mt-7 flex max-w-full items-center gap-3 rounded-full bg-deep/70 py-1.5 pr-4 pl-1.5 text-left ring-1 ring-line ring-inset backdrop-blur-sm transition-colors hover:bg-raised"
+      className="mt-7 flex max-w-full items-center gap-3 rounded-full bg-deep/70 py-1.5 pe-4 ps-1.5 text-start ring-1 ring-line ring-inset backdrop-blur-sm transition-colors hover:bg-raised"
     >
       <LibraryCover
         hash={track.artwork}
         seed={track.album}
         className="h-8 w-[42px] shrink-0"
       />
-      <span className="caps text-[10px] text-ink-4 uppercase">Next up</span>
+      <span className="caps text-[10px] text-ink-4 uppercase">{messages().player.nextUp}</span>
       <span className="min-w-0 truncate text-meta text-ink-2">
         <bdi>{track.title}</bdi> <span className="text-ink-4">·</span> <bdi>{track.artist}</bdi>
       </span>
@@ -315,7 +316,7 @@ function UpNext() {
     <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-deep/70 p-4 ring-1 ring-line ring-inset backdrop-blur-sm">
       <div className="mb-3 flex items-center justify-between px-1">
         <h2 className="font-display text-title font-normal tracking-[-0.01em]">
-          Up next
+          {messages().player.upNext}
         </h2>
         <Button
           variant="ghost"
@@ -323,12 +324,12 @@ function UpNext() {
           icon={ListMusic}
           onClick={() => useUi.setState({ queueOpen: true })}
         >
-          Queue{total > 0 ? ` · ${total}` : ""}
+          {messages().player.queueCount(total)}
         </Button>
       </div>
       {upcoming.length === 0 ? (
         <p className="px-1 py-6 text-meta text-ink-3">
-          Nothing queued after this song.
+          {messages().player.nothingQueued}
         </p>
       ) : (
         <ul className="min-h-0 space-y-0.5 overflow-y-auto">
@@ -337,7 +338,7 @@ function UpNext() {
               <button
                 type="button"
                 onClick={() => player.jumpTo(entry.uid)}
-                className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-raised/80"
+                className="flex w-full items-center gap-3 rounded-md p-2 text-start transition-colors hover:bg-raised/80"
               >
                 <LibraryCover
                   hash={track.artwork}
@@ -386,22 +387,21 @@ function LyricsPanel({ track }: { track: Track }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-deep/70 p-5 ring-1 ring-line ring-inset backdrop-blur-sm">
       <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">
-        Lyrics
+        {messages().player.lyrics}
       </h2>
       {loading ? (
-        <p className="text-meta text-ink-3">Reading tags…</p>
+        <p className="text-meta text-ink-3">{messages().player.readingTags}</p>
       ) : state.text ? (
         <p
-          className="bidi selectable min-h-0 flex-1 overflow-y-auto pr-2 text-lead leading-8 whitespace-pre-line text-ink-2"
+          className="bidi selectable min-h-0 flex-1 overflow-y-auto pe-2 text-lead leading-8 whitespace-pre-line text-ink-2"
         >
           {state.text}
         </p>
       ) : (
         <div className="py-6">
-          <p className="text-body text-ink-2">No lyrics in this file.</p>
+          <p className="text-body text-ink-2">{messages().player.noLyrics}</p>
           <p className="mt-1.5 text-meta text-ink-3">
-            RYLORA shows lyrics embedded in the file’s tags (ID3 USLT, Vorbis
-            LYRICS, MP4 ©lyr). Nothing is fetched online.
+            {messages().player.lyricsHint}
           </p>
         </div>
       )}

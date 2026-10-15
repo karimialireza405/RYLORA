@@ -13,9 +13,11 @@ import { navigate, useRoute } from "@/stores/navigation";
 import { usePlayer } from "@/stores/player";
 import { useUi } from "@/stores/ui";
 import { cn } from "@/utils/cn";
+import { useT } from "@/i18n";
 
 /** Persistent transport bar. Lives outside page routing so it never unmounts. */
 export function PlaybackBar() {
+  const t = useT();
   const current = usePlayer((s) => s.current);
   const playing = usePlayer((s) => s.status === "playing");
   // Prefer the library copy so favourite toggles reflect immediately.
@@ -27,7 +29,7 @@ export function PlaybackBar() {
 
   return (
     <footer
-      aria-label="Playback"
+      aria-label={t.playbackBar.region}
       className="relative z-40 grid h-[var(--playbar-height)] grid-cols-[minmax(200px,1fr)_minmax(320px,1.6fr)_minmax(190px,1fr)] items-center gap-4 border-t border-line bg-base px-5"
     >
       {/* Now playing */}
@@ -38,7 +40,7 @@ export function PlaybackBar() {
               key={track.id}
               type="button"
               onClick={() => navigate({ name: "nowPlaying" })}
-              aria-label="Open Now Playing"
+              aria-label={t.playbackBar.openNowPlaying}
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.92 }}
@@ -69,14 +71,14 @@ export function PlaybackBar() {
                 type="button"
                 onClick={() => navigate({ name: "album", id: track.albumId })}
                 title={track.title}
-                className="bidi block max-w-full truncate text-left text-body font-semibold text-ink hover:underline"
+                className="bidi block max-w-full truncate text-body font-semibold text-ink hover:underline"
               >
                 {track.title}
               </button>
               <button
                 type="button"
                 onClick={() => navigate({ name: "artist", id: track.artistId })}
-                className="bidi block max-w-full truncate text-left text-meta text-ink-3 hover:text-ink-2 hover:underline"
+                className="bidi block max-w-full truncate text-meta text-ink-3 hover:text-ink-2 hover:underline"
               >
                 {track.artist}
               </button>
@@ -84,10 +86,10 @@ export function PlaybackBar() {
           ) : (
             <>
               <p className="text-body font-medium text-ink-3">
-                Nothing playing
+                {t.playbackBar.nothingPlaying}
               </p>
               <p className="text-meta text-ink-4">
-                Pick a song to start listening
+                {t.playbackBar.pickSong}
               </p>
             </>
           )}
@@ -96,7 +98,7 @@ export function PlaybackBar() {
           <IconButton
             icon={Heart}
             label={
-              track.favorite ? "Remove from favorites" : "Add to favorites"
+              track.favorite ? t.common.removeFromFavorites : t.common.addToFavorites
             }
             shortcut="Ctrl+L"
             size="sm"
@@ -120,7 +122,7 @@ export function PlaybackBar() {
       <div className="flex items-center justify-end gap-1">
         <IconButton
           icon={MonitorPlay}
-          label="Now Playing"
+          label={t.common.nowPlaying}
           active={route.name === "nowPlaying"}
           aria-pressed={route.name === "nowPlaying"}
           size="sm"
@@ -129,7 +131,7 @@ export function PlaybackBar() {
         />
         <IconButton
           icon={ListMusic}
-          label="Queue"
+          label={t.common.queue}
           data-track-drop="queue"
           shortcut="Q"
           size="sm"
@@ -140,13 +142,13 @@ export function PlaybackBar() {
         />
         <IconButton
           icon={Maximize2}
-          label="Immersive mode"
+          label={t.common.immersive}
           shortcut="F11"
           size="sm"
           disabled={!track}
           onClick={() => useUi.setState({ immersive: true })}
         />
-        <VolumeControl className="ml-2" />
+        <VolumeControl className="ms-2" />
       </div>
     </footer>
   );

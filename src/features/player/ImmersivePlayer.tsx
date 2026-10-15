@@ -13,6 +13,7 @@ import { prefEnabled, useUi } from "@/stores/ui";
 import { cn } from "@/utils/cn";
 import { ProgressBar, TransportControls, VolumeControl } from "./Controls";
 import { AmbientWash } from "./NowPlayingPage";
+import { messages } from "@/i18n";
 
 const IDLE_MS = 3000;
 
@@ -96,7 +97,7 @@ export function ImmersivePlayer() {
       ref={rootRef}
       role="dialog"
       aria-modal="true"
-      aria-label={`Immersive player: ${track.title} by ${track.artist}`}
+      aria-label={messages().player.immersiveLabel(track.title, track.artist)}
       tabIndex={-1}
       initial={{ opacity: 0, scale: 1.02 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -124,14 +125,14 @@ export function ImmersivePlayer() {
         <div className="no-drag flex gap-1">
           <IconButton
             icon={fullscreen ? Minimize : Maximize}
-            label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+            label={fullscreen ? messages().player.exitFullscreen : messages().player.fullscreen}
             shortcut="F"
             onClick={() => void toggleFullscreen()}
             tooltipSide="bottom"
           />
           <IconButton
             icon={X}
-            label="Exit immersive mode"
+            label={messages().player.exitImmersive}
             shortcut="Esc"
             onClick={() => void exit()}
             tooltipSide="bottom"
@@ -164,7 +165,7 @@ export function ImmersivePlayer() {
             accent={track.accent}
             out
             spinning={playing && !reduced}
-            alt={`${track.album} by ${track.artist}`}
+            alt={messages().player.coverAlt(track.album, track.artist)}
             className="translate-x-[6%]"
             style={{
               height: "min(38vh, 34vw)",

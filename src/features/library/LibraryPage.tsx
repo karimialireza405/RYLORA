@@ -23,24 +23,18 @@ import { useLibrary } from "@/stores/library";
 import { navigate, type LibraryTab } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
 import type { Track } from "@/types/domain";
-import { plural } from "@/utils/format";
 import { normalize, sortTracks } from "@/utils/tracks";
 import { addFolderInteractive } from "./actions";
 import { AddMusicButton } from "./AddMusicButton";
 import { AlbumCard, ArtistCard, CardGrid, albumMenu } from "./Cards";
 import { playFrom, TrackTable, useSortState } from "./TrackTable";
+import { useT } from "@/i18n";
 
 const RECENT_LIMIT = 250;
 
-const TITLES: Record<LibraryTab, string> = {
-  songs: "Songs",
-  albums: "Albums",
-  artists: "Artists",
-  favorites: "Favorites",
-  recent: "Recently Added",
-};
-
 export function LibraryPage({ tab }: { tab: LibraryTab }) {
+  const t = useT();
+  const TITLES = t.library.tabs;
   const loaded = useLibrary((s) => s.loaded);
   const tracks = useLibrary((s) => s.tracks);
   const albums = useLibrary((s) => s.albums);
@@ -123,10 +117,10 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
         title={TITLES[tab]}
         subtitle={
           isTrackTab
-            ? plural(visibleTracks.length, "song")
+            ? t.count.songs(visibleTracks.length)
             : tab === "albums"
-              ? plural(visibleAlbums.length, "album")
-              : plural(visibleArtists.length, "artist")
+              ? t.count.albums(visibleAlbums.length)
+              : t.count.artists(visibleArtists.length)
         }
         actions={
           <>
@@ -137,7 +131,7 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                   icon={Play}
                   onClick={() => playFrom(visibleTracks, 0, player.playTracks)}
                 >
-                  Play
+                  {t.common.play}
                 </Button>
                 <Button
                   variant="secondary"
@@ -151,7 +145,7 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                     );
                   }}
                 >
-                  Shuffle
+                  {t.common.shuffle}
                 </Button>
               </>
             )}
@@ -164,17 +158,17 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
         <div className="library-tabs">
           <Segmented
             variant="line"
-            label="Library view"
+            label={t.library.view}
             value={tab}
-            onChange={(t) =>
-              navigate({ name: "library", tab: t }, { replace: true })
+            onChange={(next) =>
+              navigate({ name: "library", tab: next }, { replace: true })
             }
             options={[
-              { value: "songs", label: "Songs", count: counts.songs },
-              { value: "albums", label: "Albums", count: counts.albums },
-              { value: "artists", label: "Artists", count: counts.artists },
-              { value: "favorites", label: "Favorites" },
-              { value: "recent", label: "Recent" },
+              { value: "songs", label: t.library.tabs.songs, count: counts.songs },
+              { value: "albums", label: t.library.tabs.albums, count: counts.albums },
+              { value: "artists", label: t.library.tabs.artists, count: counts.artists },
+              { value: "favorites", label: t.library.tabs.favorites },
+              { value: "recent", label: t.library.recentTab },
             ]}
           />
         </div>
@@ -185,17 +179,17 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
               type="search"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder={`Search ${TITLES[tab].toLowerCase()}`}
-              aria-label={`Filter ${TITLES[tab]}`}
+              placeholder={t.library.searchIn(TITLES[tab])}
+              aria-label={t.library.filterIn(TITLES[tab])}
               dir="auto"
             />
           </label>
           <div className="library-view-tools">
             {tab === "albums" && (
               <label className="library-sort">
-                <span className="sr-only">Sort albums</span>
+                <span className="sr-only">{t.library.sortAlbums}</span>
                 <select
-                  aria-label="Sort albums"
+                  aria-label={t.library.sortAlbums}
                   value={prefs.albumSort ?? "title"}
                   onChange={(e) =>
                     void setPreference(
@@ -204,40 +198,40 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                     )
                   }
                 >
-                  <option value="title">Title</option>
-                  <option value="artist">Artist</option>
-                  <option value="addedAt">Recently added</option>
+                  <option value="title">{t.library.sortTitle}</option>
+                  <option value="artist">{t.library.sortArtist}</option>
+                  <option value="addedAt">{t.library.sortAdded}</option>
                 </select>
               </label>
             )}
             {isTrackTab && (
               <label className="library-sort">
-                <span className="sr-only">Sort songs</span>
+                <span className="sr-only">{t.library.sortSongs}</span>
                 <select
-                  aria-label="Sort songs"
+                  aria-label={t.library.sortSongs}
                   value={sort.key}
                   onChange={(e) => toggle(e.target.value as typeof sort.key)}
                 >
-                  <option value="default">Album order</option>
-                  <option value="title">Title</option>
-                  <option value="artist">Artist</option>
-                  <option value="album">Album</option>
-                  <option value="addedAt">Recently added</option>
-                  <option value="durationMs">Duration</option>
-                  <option value="playCount">Most played</option>
+                  <option value="default">{t.library.sortAlbumOrder}</option>
+                  <option value="title">{t.library.sortTitle}</option>
+                  <option value="artist">{t.library.sortArtist}</option>
+                  <option value="album">{t.library.sortAlbum}</option>
+                  <option value="addedAt">{t.library.sortAdded}</option>
+                  <option value="durationMs">{t.library.sortDuration}</option>
+                  <option value="playCount">{t.library.sortMostPlayed}</option>
                 </select>
               </label>
             )}
             {(isTrackTab || tab === "albums") && (
               <div
                 role="group"
-                aria-label="Collection layout"
+                aria-label={t.library.layout}
                 className="library-layout"
               >
                 <IconButton
                   size="sm"
                   icon={Grid2X2}
-                  label="Grid view"
+                  label={t.library.gridView}
                   aria-pressed={layout === "grid"}
                   active={layout === "grid"}
                   onClick={() =>
@@ -250,7 +244,7 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                 <IconButton
                   size="sm"
                   icon={List}
-                  label="List view"
+                  label={t.library.listView}
                   aria-pressed={layout === "list"}
                   active={layout === "list"}
                   onClick={() =>
@@ -271,15 +265,15 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
       ) : tracks.length === 0 ? (
         <EmptyState
           icon={Music2}
-          title="Your library is empty"
-          description="Add a folder of music and RYLORA will index it in the background."
+          title={t.library.emptyTitle}
+          description={t.library.emptyBody}
         >
           <Button
             variant="primary"
             icon={FolderPlus}
             onClick={() => void addFolderInteractive()}
           >
-            Add music folder
+            {t.library.addMusicFolder}
           </Button>
         </EmptyState>
       ) : isTrackTab ? (
@@ -288,17 +282,17 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
             icon={tab === "favorites" ? Heart : Music2}
             title={
               needle
-                ? "No matches"
+                ? t.library.noMatches
                 : tab === "favorites"
-                  ? "No favorites yet"
-                  : "Nothing added yet"
+                  ? t.library.noFavorites
+                  : t.library.nothingAdded
             }
             description={
               needle
-                ? `Nothing in ${TITLES[tab]} matches “${filter}”.`
+                ? t.library.noMatchesIn(TITLES[tab], filter)
                 : tab === "favorites"
-                  ? "Tap the heart on any song and it will appear here."
-                  : `Your ${RECENT_LIMIT} newest songs appear here.`
+                  ? t.library.favoritesHint
+                  : t.library.recentHint(RECENT_LIMIT)
             }
           />
         ) : layout === "grid" ? (
@@ -316,11 +310,11 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                 <div className="group relative min-w-0">
                   <button
                     type="button"
-                    className="block w-full text-left"
+                    className="block w-full text-start"
                     onClick={() =>
                       playFrom(visibleTracks, i, player.playTracks)
                     }
-                    aria-label={`Play ${track.title}`}
+                    aria-label={t.common.playNamed(track.title)}
                   >
                     <LibraryCover
                       hash={track.artwork}
@@ -351,14 +345,14 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                   >
                     <IconButton
                       icon={MoreHorizontal}
-                      label={`Options for ${track.title}`}
+                      label={t.library.optionsFor(track.title)}
                       size="sm"
                       className="absolute top-2 right-2 bg-obsidian/80"
                     />
                   </DropdownMenuButton>
                   {track.missing && (
                     <p className="mt-1 text-caption text-warning">
-                      File unavailable
+                      {t.library.fileUnavailable}
                     </p>
                   )}
                 </div>
@@ -377,14 +371,14 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
       ) : tab === "albums" ? (
         visibleAlbums.length ? (
           layout === "list" ? (
-            <div role="list" aria-label="Albums">
+            <div role="list" aria-label={t.library.tabs.albums}>
               {visibleAlbums.map((a) => (
                 <div key={a.id} role="listitem">
                   <ContextMenuArea entries={() => albumMenu(a)}>
                     <button
                       type="button"
                       onClick={() => navigate({ name: "album", id: a.id })}
-                      className="flex w-full items-center gap-4 rounded-sm border-b border-line px-3 py-3 text-left hover:bg-raised"
+                      className="flex w-full items-center gap-4 rounded-sm border-b border-line px-3 py-3 text-start hover:bg-raised"
                     >
                       <LibraryCover
                         hash={a.artwork}
@@ -405,7 +399,7 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
                         </span>
                       </span>
                       <span className="text-meta text-ink-3">
-                        {plural(a.trackCount, "song")}
+                        {t.count.songs(a.trackCount)}
                       </span>
                     </button>
                   </ContextMenuArea>
@@ -422,8 +416,8 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
         ) : (
           <EmptyState
             icon={Music2}
-            title="No matches"
-            description={`No albums match “${filter}”.`}
+            title={t.library.noMatches}
+            description={t.library.noAlbumsMatch(filter)}
           />
         )
       ) : visibleArtists.length ? (
@@ -435,8 +429,8 @@ export function LibraryPage({ tab }: { tab: LibraryTab }) {
       ) : (
         <EmptyState
           icon={Music2}
-          title="No matches"
-          description={`No artists match “${filter}”.`}
+          title={t.library.noMatches}
+          description={t.library.noArtistsMatch(filter)}
         />
       )}
     </Page>

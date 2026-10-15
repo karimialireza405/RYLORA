@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { messages } from "@/i18n";
 
 export type ToastTone = "info" | "success" | "error";
 
@@ -29,7 +30,7 @@ export function toast(t: Omit<Toast, "id">, durationMs = t.tone === "error" ? 65
 export function errorMessage(error: unknown): string {
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) return String((error as { message: unknown }).message);
-  return "Something went wrong.";
+  return messages().common.somethingWentWrong;
 }
 
 export function notifyError(title: string, error: unknown): void {

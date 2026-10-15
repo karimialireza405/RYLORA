@@ -199,9 +199,18 @@
   /* User metadata (titles, artists, albums, lyrics): word order follows the text's own
      language, while alignment follows the interface direction. A Persian title in an
      English layout reads right-to-left yet stays aligned with its column. */
+  /* Mixed Persian/Latin metadata: word order follows the text itself, while the
+     line aligns with the interface direction. (With plaintext bidi, "start" would
+     follow the text's own direction and pin English titles to the left in RTL.) */
   .bidi {
     unicode-bidi: plaintext;
-    text-align: match-parent;
+    text-align: left;
+  }
+  :where([dir="rtl"]) .bidi {
+    text-align: right;
+  }
+  .bidi.text-center {
+    text-align: center;
   }
 
   /* Light is concentrated on headings and selected content, not tiny metadata. */
@@ -306,7 +315,6 @@
   }
   .home-continue-title {
     margin-block: 8px 6px;
-    text-align: left;
   }
   .home-records {
     margin-top: 32px;
