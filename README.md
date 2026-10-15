@@ -16,9 +16,14 @@ is tracked.
   transitions, an editable queue, error recovery and session resume.
 * **Live spectrum visualizer** computed by FFT from the samples actually being
   played — no decorative fake waveforms.
-* **Local library** with incremental background scanning, embedded artwork,
-  accent colours extracted from covers, missing-file tracking, favourites,
-  listening history and playlists (drag to reorder).
+* **Local library** with incremental background scanning, **folder watching**
+  (new or deleted songs appear within seconds), embedded artwork, accent colours
+  extracted from covers, missing-file tracking, favourites, listening history and
+  playlists (drag to reorder).
+* **Synced lyrics** from `.lrc` files or the song's tags, following the music;
+  click a line to jump there.
+* **Signed updates** (opt-in) verified before installing; see
+  [releasing](docs/development/releasing.md).
 * **Now Playing** and full-window **Immersive mode** lit by the album art.
 * **Fast local search** across songs, albums, artists and playlists.
 * **Keyboard-first**: global shortcuts (press `?` in the app), accessible menus,
@@ -90,6 +95,7 @@ scripts/             test-media generator
 * [Design system](docs/design-system/overview.md)
 * [Development setup & verification](docs/development/setup.md)
 * [Roadmap & known limitations](docs/development/roadmap.md)
+* [Releasing, updates & code signing](docs/development/releasing.md)
 
 ## Tech
 

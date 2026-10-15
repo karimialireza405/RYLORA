@@ -2,6 +2,7 @@
 
 pub mod artwork;
 pub mod clean;
+pub mod lyrics;
 pub mod write;
 
 use std::path::Path;
@@ -127,15 +128,6 @@ pub fn read_tags(path: &Path, clean_tags: bool) -> Result<TrackTags, String> {
         tags.album = if album_was_advert { tags.title.clone() } else { UNKNOWN_ALBUM.into() };
     }
     Ok(tags)
-}
-
-/// Unsynchronised lyrics embedded in the file's tags (ID3 USLT, Vorbis LYRICS, MP4 ©lyr).
-pub fn read_lyrics(path: &Path) -> Result<Option<String>, String> {
-    let tagged = lofty::read_from_path(path).map_err(|e| e.to_string())?;
-    let text = tagged.tags().iter().find_map(|tag| {
-        tag.get_string(ItemKey::UnsyncLyrics).or_else(|| tag.get_string(ItemKey::Lyrics))
-    });
-    Ok(text.map(|s| s.lines().map(str::trim_end).collect::<Vec<_>>().join("\n").trim().to_string()).filter(|s| !s.is_empty()))
 }
 
 #[cfg(test)]

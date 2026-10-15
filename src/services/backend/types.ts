@@ -3,6 +3,10 @@ import type {
   CrossfadeSettings,
   EqSettings,
   LevelingSettings,
+  Lyrics,
+  UpdateInfo,
+  UpdateProgress,
+  UpdateStatus,
   LoudnessProgress,
   HistoryEntry,
   ImportResult,
@@ -32,6 +36,7 @@ export interface BackendEvents {
   "library://scan-finished": ScanSummary;
   "library://changed": null;
   "audio://loudness": LoudnessProgress;
+  "updates://progress": UpdateProgress;
 }
 
 export type Unlisten = () => void;
@@ -65,7 +70,7 @@ export interface Backend {
     jumpTo(uid: number): Promise<void>;
     clearQueue(): Promise<void>;
     setVisualizer(enabled: boolean): Promise<void>;
-    lyrics(trackId: TrackId): Promise<string | null>;
+    lyrics(trackId: TrackId): Promise<Lyrics | null>;
   };
 
   audio: {
@@ -99,6 +104,14 @@ export interface Backend {
     add(id: PlaylistId, trackIds: TrackId[]): Promise<void>;
     removeEntries(id: PlaylistId, entryIds: number[]): Promise<void>;
     move(id: PlaylistId, entryId: number, to: number): Promise<void>;
+  };
+
+  updates: {
+    status(): Promise<UpdateStatus>;
+    /** Null when this is the latest version. */
+    check(): Promise<UpdateInfo | null>;
+    /** Downloads, verifies and runs the installer; RYLORA restarts. */
+    install(): Promise<void>;
   };
 
   settings: {

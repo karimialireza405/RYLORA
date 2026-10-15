@@ -2,6 +2,7 @@
 
 pub mod paths;
 pub mod scanner;
+pub mod watcher;
 
 /// Extensions RYLORA indexes. Each one is decoded by the bundled symphonia build and
 /// has been exercised with real files (see docs/development/setup.md).

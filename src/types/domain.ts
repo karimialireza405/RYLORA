@@ -168,6 +168,8 @@ export type Preferences = Partial<{
   ambientBackground: "true" | "false";
   visualizer: "true" | "false";
   scanOnStartup: "true" | "false";
+  watchFolders: "true" | "false";
+  checkUpdates: "true" | "false";
   libraryView: "list" | "grid";
   albumView: "list" | "grid";
   coverStyle: "artwork" | "vinyl";
@@ -179,6 +181,37 @@ export type Preferences = Partial<{
   cleanTags: "true" | "false";
   language: "fa" | "en";
 }>;
+
+/** Mirrors `commands::updates`. */
+export interface UpdateStatus {
+  /** Whether this build knows where to look for updates. */
+  configured: boolean;
+  currentVersion: string;
+}
+
+export interface UpdateInfo {
+  version: string;
+  notes: string | null;
+  date: string | null;
+}
+
+export interface UpdateProgress {
+  downloaded: number;
+  total: number | null;
+}
+
+/** Mirrors `metadata::lyrics::Lyrics`. Synced lines carry their start time. */
+export interface LyricLine {
+  timeMs: number | null;
+  text: string;
+}
+
+export interface Lyrics {
+  synced: boolean;
+  /** "file": a .lrc beside the song; "tags": the song's own tags. */
+  source: "file" | "tags";
+  lines: LyricLine[];
+}
 
 /** Mirrors `audio::eq::EqSettings`: ten bands at 31 Hz … 16 kHz, gains in dB (±12). */
 export interface EqSettings {

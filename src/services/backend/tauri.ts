@@ -76,6 +76,11 @@ export function createTauriBackend(): Backend {
       set: (key, value) => invoke("settings_set", { key, value }),
     },
 
+    updates: {
+      status: () => invoke("updates_status"),
+      check: () => invoke("updates_check"),
+      install: () => invoke("updates_install"),
+    },
     system: {
       pickFolder: async () => {
         const result = await open({ directory: true, multiple: false, title: messages().dialogs.addFolder });

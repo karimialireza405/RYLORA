@@ -115,6 +115,11 @@ Not claimed: bit-perfect/exclusive (WASAPI exclusive) output.
   files are flagged `missing` (never deleted) and un-flagged when they return;
   unreachable folders (e.g. unplugged drive) flag their tracks missing.
 * Nested/overlapping library folders are rejected to avoid double indexing.
+* `library/watcher.rs` watches library folders recursively (`notify`, ReadDirectoryChangesW
+  on Windows). Only audio files and extensionless paths (folders) count; bursts are
+  collapsed until 2 s of quiet (at most 15 s), then the normal incremental scan runs.
+  The watch list is refreshed when folders change, after each scan (to pick up
+  drives that came back) and when the setting changes.
 * Artwork is content-addressed (BLAKE3), resized to 640 px and 192 px JPEGs, and
   served by the narrow `artwork://` protocol (`/<32 hex>/<sm|lg>` only).
 * Accent colours are extracted in Rust and lightened until they reach ≥ 4.6:1
@@ -127,20 +132,24 @@ Not claimed: bit-perfect/exclusive (WASAPI exclusive) output.
 * All file access happens in Rust; paths from the UI come only from native
   dialogs, drag-and-drop or the library.
 * CSP restricts scripts to the bundle; images to self/data/artwork protocol.
-* No network requests, no telemetry.
+* No telemetry. The only network request is the update check (`latest.json`
+  and the installer), made only when the user asks or enabled automatic checks;
+  downloads are verified against the updater public key in `tauri.conf.json`
+  before anything runs. The updater is used from Rust only, so the webview gets no
+  updater permission.
 * `unsafe` is used exactly once: the documented COM interop call
   `ISystemMediaTransportControlsInterop::GetForWindow` (see `system/media_controls.rs`).
 
 ## Tests
 
-* Rust (`cargo test`, 72 tests): queue/shuffle/repeat rules, the playback stream
+* Rust (`cargo test`, 80 tests): queue/shuffle/repeat rules, the playback stream
   (gapless switch, format conversion, seek, EQ, levelling gain ramps, crossfade
   timing/curves/silence skipping), EQ filter responses, loudness measurement
   against the BS.1770 reference tone, ReplayGain tag parsing, gain/peak rules,
   FFT and band mapping, path identity, accent contrast, migrations, repositories
   (identity, playlists, cascades, compilations, missing files, loudness validity),
-  metadata fallbacks.
-* Frontend (`npm test`, 36 tests): formatting, RTL detection, sorting, search ranking,
+  metadata fallbacks, LRC/SYLT lyrics parsing and encodings, folder watching.
+* Frontend (`npm test`, 38 tests): formatting, RTL detection, sorting, search ranking,
   personal music import, duplicate handling, refresh/scan completion, EQ presets,
-  levelling/crossfade settings.
+  levelling/crossfade settings, synced-lyrics line tracking.
 * End-to-end checks against the real app (see `docs/development/setup.md`).

@@ -55,6 +55,8 @@ pub fn run() {
         )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(commands::updates::PendingUpdate::default())
         .register_asynchronous_uri_scheme_protocol("artwork", |ctx, request, responder| {
             let dir = ctx.app_handle().state::<AppState>().library.artwork_dir().clone();
             std::thread::spawn(move || responder.respond(system::artwork_protocol::respond(&dir, &request)));
@@ -73,6 +75,8 @@ pub fn run() {
             let state = AppState { db, player, library };
             if commands::settings::scan_on_startup(&state) || state.library.tags_outdated() {
                 state.library.scan();
+            } else {
+                state.library.refresh_watch();
             }
             app.manage(state);
             Ok(())
@@ -123,6 +127,10 @@ pub fn run() {
             commands::playlists::playlist_move,
             commands::settings::settings_get,
             commands::settings::settings_set,
+            commands::updates::updates_status,
+            commands::updates::updates_check,
+            commands::updates::updates_install,
+            commands::updates::updates_verify_download,
         ])
         .build(tauri::generate_context!())
         .expect("error while building RYLORA")

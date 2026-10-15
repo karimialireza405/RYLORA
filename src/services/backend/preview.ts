@@ -385,6 +385,13 @@ export function createPreviewBackend(): Backend {
         prefs = { ...prefs, [key]: value };
       },
     },
+    updates: {
+      status: async () => ({ configured: false, currentVersion: "0.1.0" }),
+      check: async () => null,
+      install: async () => {
+        throw new Error("Updates are installed by the desktop app.");
+      },
+    },
     system: {
       pickFolder: async () => { throw new Error("Open the RYLORA desktop app to add your music. This browser view is a design preview."); },
       pickAudioFiles: async () => { throw new Error("Open the RYLORA desktop app to add your music. This browser view is a design preview."); },

@@ -6,6 +6,7 @@ use crate::application::library::ImportResult;
 use crate::database::repo::{self, HistoryEntry, LibraryFolder};
 use crate::domain::models::{Album, Artist, Track, TrackId};
 use crate::error::{AppError, AppResult};
+use crate::metadata::lyrics::{self, Lyrics};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -87,10 +88,9 @@ pub fn library_recent_plays(state: State<'_, AppState>, limit: u32) -> AppResult
 }
 
 #[tauri::command]
-pub async fn track_lyrics(state: State<'_, AppState>, track_id: TrackId) -> AppResult<Option<String>> {
+pub async fn track_lyrics(state: State<'_, AppState>, track_id: TrackId) -> AppResult<Option<Lyrics>> {
     let track = repo::track_by_id(&state.db.conn(), track_id)?.ok_or_else(|| AppError::NotFound("Track not found.".into()))?;
-    tauri::async_runtime::spawn_blocking(move || crate::metadata::read_lyrics(std::path::Path::new(&track.path)))
+    tauri::async_runtime::spawn_blocking(move || lyrics::read(std::path::Path::new(&track.path)))
         .await
-        .map_err(|e| AppError::Unavailable(e.to_string()))?
-        .map_err(AppError::Invalid)
+        .map_err(|e| AppError::Unavailable(e.to_string()))
 }

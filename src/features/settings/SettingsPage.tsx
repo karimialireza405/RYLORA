@@ -22,12 +22,15 @@ import { useLibrary } from "@/stores/library";
 import { prefEnabled, setPreference, useUi } from "@/stores/ui";
 import { usePreferredLanguage, useT } from "@/i18n";
 import { ShortcutsTable } from "./ShortcutsDialog";
+import { UpdatesSection } from "./UpdatesSection";
+import { useUpdates } from "@/stores/updates";
 import { PlaybackOptions } from "@/features/sound/PlaybackOptions";
 import { OutputDevicePicker } from "@/features/sound/SoundDialog";
 import { loadAudioSettings, openSound } from "@/stores/audio";
 
 export function SettingsPage() {
   const t = useT();
+  const appVersion = useUpdates((s) => s.status?.currentVersion ?? "");
   const lang = usePreferredLanguage();
   const prefs = useUi((s) => s.prefs);
   const folders = useLibrary((s) => s.folders);
@@ -139,6 +142,14 @@ export function SettingsPage() {
             }
           />
           <Switch
+            label={t.settings.watchFolders}
+            description={t.settings.watchFoldersHint}
+            checked={prefEnabled(prefs, "watchFolders")}
+            onChange={(v) =>
+              void setPreference("watchFolders", v ? "true" : "false")
+            }
+          />
+          <Switch
             label={t.settings.cleanTags}
             description={t.settings.cleanTagsHint}
             checked={prefEnabled(prefs, "cleanTags")}
@@ -216,13 +227,17 @@ export function SettingsPage() {
         <ShortcutsTable />
       </Section>
 
+      <Section title={t.settings.updates}>
+        <UpdatesSection />
+      </Section>
+
       <Section title={t.settings.about}>
         <div className="flex items-center gap-4">
           <img src={mark} alt="" className="size-12" />
           <div>
             <p className="caps glow text-[15px] tracking-[0.34em]">RYLORA</p>
             <p className="text-meta text-ink-3">
-              {t.app.version("0.1.0")} · {t.app.tagline}
+              {t.app.version(appVersion)} · {t.app.tagline}
             </p>
           </div>
         </div>

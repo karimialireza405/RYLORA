@@ -13,6 +13,7 @@ use crate::database::{repo, Db};
 use crate::error::{AppError, AppResult};
 use crate::events;
 use crate::domain::models::TrackId;
+use crate::library::watcher::LibraryWatcher;
 use crate::library::{is_supported, paths, scanner};
 use crate::metadata::clean;
 
@@ -42,11 +43,13 @@ pub struct LibraryService {
     cancel: Arc<AtomicBool>,
     rescan_requested: Arc<AtomicBool>,
     scan_gate: Arc<Mutex<()>>,
+    watcher: Arc<LibraryWatcher>,
 }
 
 impl LibraryService {
     pub fn new(app: AppHandle, db: Db, player: PlayerHandle, artwork_dir: PathBuf) -> Self {
-        Self {
+        let (watcher, changes) = LibraryWatcher::new();
+        let service = Self {
             app,
             db,
             player,
@@ -55,7 +58,37 @@ impl LibraryService {
             cancel: Arc::new(AtomicBool::new(false)),
             rescan_requested: Arc::new(AtomicBool::new(false)),
             scan_gate: Arc::new(Mutex::new(())),
-        }
+            watcher: Arc::new(watcher),
+        };
+        let this = service.clone();
+        std::thread::Builder::new()
+            .name("rylora-watch-scan".into())
+            .spawn(move || {
+                while changes.recv().is_ok() {
+                    log::info!("library folders changed; rescanning");
+                    this.scan();
+                }
+            })
+            .expect("failed to spawn watch thread");
+        service
+    }
+
+    /// Watch the library folders for changes made outside RYLORA (unless turned off),
+    /// picking up folders that became reachable again since the last call.
+    pub fn refresh_watch(&self) {
+        let folders = {
+            let conn = self.db.conn();
+            let enabled = repo::preference(&conn, "watchFolders").ok().flatten().is_none_or(|v| v == "true");
+            match repo::list_folders(&conn) {
+                Ok(list) if enabled => list.into_iter().filter(|f| f.available).map(|f| PathBuf::from(f.path)).collect(),
+                Ok(_) => Vec::new(),
+                Err(e) => {
+                    log::warn!("cannot list folders to watch: {e}");
+                    return;
+                }
+            }
+        };
+        self.watcher.watch(folders);
     }
 
     pub fn artwork_dir(&self) -> &PathBuf {
@@ -82,6 +115,7 @@ impl LibraryService {
         }
         let canonical = paths::canonical(&raw);
         repo::add_folder(&self.db.conn(), &canonical.to_string_lossy(), &paths::key(&canonical))?;
+        self.refresh_watch();
         self.scan();
         Ok(())
     }
@@ -91,6 +125,7 @@ impl LibraryService {
             return Err(AppError::Unavailable("Wait for the current scan to finish before removing a folder.".into()));
         }
         repo::remove_folder(&mut self.db.conn(), id)?;
+        self.refresh_watch();
         self.notify_changed();
         Ok(())
     }
@@ -161,6 +196,7 @@ impl LibraryService {
                     events::emit(&this.app, events::LIBRARY_SCAN_FINISHED, summary);
                     this.notify_changed();
                     if finished {
+                        this.refresh_watch();
                         break;
                     }
                 }

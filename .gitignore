@@ -7,3 +7,4 @@ test-media/
 .DS_Store
 .vite/
 .local/
+/release/

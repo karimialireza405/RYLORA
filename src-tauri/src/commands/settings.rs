@@ -15,6 +15,8 @@ const ALLOWED: &[(&str, &[&str])] = &[
     ("ambientBackground", &[]),
     ("visualizer", &[]),
     ("scanOnStartup", &[]),
+    ("watchFolders", &[]),
+    ("checkUpdates", &[]),
     ("libraryView", &["list", "grid"]),
     ("albumView", &["list", "grid"]),
     ("coverStyle", &["artwork", "vinyl"]),
@@ -79,6 +81,7 @@ pub fn settings_set(state: State<'_, AppState>, key: String, value: String) -> A
         .and_then(|r| serde_json::from_str(&r).ok())
         .unwrap_or_default();
     let reindex = key == "cleanTags" && prefs.get(&key) != Some(&value);
+    let watch_changed = key == "watchFolders";
     prefs.insert(key, value);
     let json = serde_json::to_string(&prefs).map_err(|e| AppError::Invalid(e.to_string()))?;
     repo::set_setting(&conn, repo::PREFERENCES_KEY, &json)?;
@@ -86,6 +89,9 @@ pub fn settings_set(state: State<'_, AppState>, key: String, value: String) -> A
     if reindex {
         // Re-read every file so library values follow the new choice.
         state.library.scan();
+    }
+    if watch_changed {
+        state.library.refresh_watch();
     }
     Ok(())
 }

@@ -72,7 +72,7 @@ export async function setPreference<K extends keyof Preferences>(
 /** Boolean preference with its default. */
 export function prefEnabled(
   prefs: Preferences,
-  key: "ambientBackground" | "visualizer" | "scanOnStartup" | "cleanTags",
+  key: "ambientBackground" | "visualizer" | "scanOnStartup" | "watchFolders" | "cleanTags",
 ): boolean {
   return prefs[key] !== "false";
 }

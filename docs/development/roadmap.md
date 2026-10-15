@@ -52,6 +52,11 @@ background scan, lofty metadata with fallbacks, sidecar `cover.jpg`/`folder.png`
 artwork, missing-file tracking, favourites, play history, album pins, metadata
 editor (library-side by default; optional safe write to file tags), library-side
 cleanup of download-site adverts and broken Persian encoding in tags.
+**Folder watching** (on by default, Settings → Library): songs added, changed,
+moved or deleted in library folders appear within seconds while RYLORA is open —
+changes are collected until the folder is quiet for 2 s, then one incremental scan
+runs. Verified 2026-10-16: a copied song appeared 2.1 s later; deleting it marked it
+missing 2.4 s later.
 
 **Persistence** — SQLite with migrations (001 initial, 002 metadata edits,
 003 loudness measurements);
@@ -66,19 +71,39 @@ Play, Pause, Next and Previous sent through SMTC (the media-key path) drive the
 player. The cover previously used a `file:///` URI, which SMTC does not accept; it
 now loads through `StorageFile`.
 
-**Lyrics** — embedded unsynchronised lyrics (ID3 USLT, Vorbis LYRICS, MP4 ©lyr).
+**Lyrics** — synced lyrics from a `.lrc` file beside the song (UTF-8/UTF-16 or
+Windows-1256, offsets, enhanced word timings stripped), an ID3 SYLT frame, or LRC
+text inside the lyrics tag; plain lyrics otherwise (USLT, Vorbis LYRICS, MP4 ©lyr).
+The current line is lit and kept centred, following the playing position between
+progress updates; clicking a line jumps there; scrolling by hand pauses following
+for 4 s. Verified 2026-10-16 in the running app with a mixed Persian/English `.lrc`.
+
+**Updates** — signed updates through Tauri's updater: check on demand or
+automatically at launch (off by default), download with progress, verification
+against the public key built into the app, then the installer runs and RYLORA
+restarts. `scripts/release.ps1` builds the installer, its signature and
+`latest.json`; nothing is uploaded. Verified 2026-10-16 against a local server: a
+genuine update downloaded and verified; a one-byte-modified download and a manifest
+announcing a different version than the signed one were both rejected. See
+[releasing.md](releasing.md).
+
+**Code signing pipeline** — `scripts/sign.ps1` signs the app, the NSIS plugins and
+the installer during `tauri build` when a certificate (`.pfx`, Windows store /
+token, or Azure Trusted Signing) is configured, and leaves them unsigned otherwise.
+Verified with a throwaway self-made certificate; a trusted certificate is still to
+be acquired (see Next).
 
 ## Next
 
-1. **WASAPI exclusive / bit-perfect output** (would need a direct cpal path).
-2. **File watching** — `notify` crate to pick up changes without a rescan.
-3. **Synced lyrics** (LRC sidecars / SYLT) with highlighted lines.
-4. **Tray icon** with transport controls and close-to-tray option.
-5. **Smart collections** — never played, by genre/decade.
-6. **Large-library tuning** — measure 50k+ tracks; consider paging the snapshot
+1. **Publishing decisions** (yours): a code-signing certificate or Azure Trusted
+   Signing, and a host for releases; then a password-protected updater key. See
+   [releasing.md](releasing.md).
+2. **WASAPI exclusive / bit-perfect output** (would need a direct cpal path).
+3. **Tray icon** with transport controls and close-to-tray option.
+4. **Smart collections** — never played, by genre/decade.
+5. **Large-library tuning** — measure 50k+ tracks; consider paging the snapshot
    and FTS5 search if the in-memory approach shows strain.
-7. **Bundle size** — split rarely used routes (frontend JS is ~735 kB before gzip).
-8. **Code signing** for the installer (requires a certificate).
+6. **Bundle size** — split rarely used routes (frontend JS is ~735 kB before gzip).
 
 ## Known limitations
 
@@ -98,5 +123,15 @@ now loads through `StorageFile`.
   of tracks, not yet measured beyond that.
 * The Windows media flyout timeline updates on state changes (play/pause/seek/
   track change), not continuously.
+* Folder watching works while RYLORA is open; changes made while it is closed are
+  picked up by the scan at launch. Replacing cover-image files alone does not
+  trigger a rescan.
+* Persian lyrics files in Windows-1256 use the Arabic forms of ی and ک, as that code
+  page has no Persian letters; they are shown as stored.
+* Updates need a release host and signing decisions before they can be used; until
+  then builds say they cannot check for updates. The installer step of an update
+  (running NSIS) was not exercised in testing, to avoid installing software on the
+  development machine.
+* The installer is not yet signed with a trusted certificate (SmartScreen will
+  warn).
 * Error messages produced by the Rust backend are English in both languages.
-* Installer is unsigned (SmartScreen will warn).

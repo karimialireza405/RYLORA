@@ -2,6 +2,7 @@ import { handleDroppedPaths } from "@/features/library/actions";
 import { pushSpectrum } from "@/features/visualizer/spectrumBus";
 import { initBackend } from "@/services/backend";
 import { loadAudioSettings, useAudio } from "@/stores/audio";
+import { checkOnLaunch, onUpdateProgress } from "@/stores/updates";
 import { refreshLibrary, useLibrary } from "@/stores/library";
 import { applySnapshot, usePlayer, useProgress } from "@/stores/player";
 import { toast } from "@/stores/toasts";
@@ -66,6 +67,7 @@ async function start(): Promise<void> {
     }),
     api.on("library://changed", scheduleRefresh),
     api.on("audio://loudness", (loudness) => useAudio.setState({ loudness })),
+    api.on("updates://progress", onUpdateProgress),
     api.system.window.onFileDrop((paths, kind) => {
       if (kind === "enter") useUi.setState({ dropActive: true });
       else if (kind === "leave") useUi.setState({ dropActive: false });
@@ -82,4 +84,5 @@ async function start(): Promise<void> {
     .catch(() => usePlayer.setState({ ready: true }));
   void refreshLibrary();
   void loadAudioSettings();
+  void checkOnLaunch(prefs.checkUpdates === "true");
 }

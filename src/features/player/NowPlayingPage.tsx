@@ -7,7 +7,7 @@ import {
   Music2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { Page } from "@/components/layout/AppShell";
 import { EmptyState } from "@/components/feedback/EmptyState";
@@ -15,7 +15,6 @@ import { Button, IconButton } from "@/components/ui/Button";
 import { DropdownMenuButton } from "@/components/ui/Menu";
 import { playlistSubmenu } from "@/features/library/trackMenu";
 import { SpectrumVisualizer } from "@/features/visualizer/SpectrumVisualizer";
-import { backend } from "@/services/backend";
 import { setFavorite, useLibrary } from "@/stores/library";
 import { navigate } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
@@ -28,6 +27,7 @@ import { LibraryCover } from "@/components/ui/LibraryCover";
 import { cn } from "@/utils/cn";
 import { formatTime } from "@/utils/format";
 import { ProgressBar, TransportControls, VolumeControl } from "./Controls";
+import { LyricsPanel } from "./LyricsPanel";
 import { messages } from "@/i18n";
 
 export function NowPlayingPage() {
@@ -210,10 +210,14 @@ export function NowPlayingPage() {
 
         {showAside && (
           <aside
-            className="flex min-h-0 flex-col"
+            // The panel fills the row the player sets, and scrolls inside it rather than
+            // stretching the page with long lyrics or queues.
+            className="relative min-h-[420px]"
             aria-label={lyricsOpen ? messages().player.lyrics : messages().player.upNext}
           >
-            {lyricsOpen ? <LyricsPanel track={track} /> : <UpNext />}
+            <div className="absolute inset-0 flex flex-col">
+              {lyricsOpen ? <LyricsPanel track={track} /> : <UpNext />}
+            </div>
           </aside>
         )}
       </div>
@@ -362,48 +366,6 @@ function UpNext() {
             </li>
           ))}
         </ul>
-      )}
-    </div>
-  );
-}
-
-function LyricsPanel({ track }: { track: Track }) {
-  const [state, setState] = useState<{
-    id: number;
-    text: string | null;
-  } | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    backend()
-      .player.lyrics(track.id)
-      .then((text) => !cancelled && setState({ id: track.id, text }))
-      .catch(() => !cancelled && setState({ id: track.id, text: null }));
-    return () => {
-      cancelled = true;
-    };
-  }, [track.id]);
-
-  const loading = !state || state.id !== track.id;
-  return (
-    <div className="flex min-h-0 flex-1 flex-col rounded-xl bg-deep/70 p-5 ring-1 ring-line ring-inset backdrop-blur-sm">
-      <h2 className="mb-4 font-display text-title font-normal tracking-[-0.01em]">
-        {messages().player.lyrics}
-      </h2>
-      {loading ? (
-        <p className="text-meta text-ink-3">{messages().player.readingTags}</p>
-      ) : state.text ? (
-        <p
-          className="bidi selectable min-h-0 flex-1 overflow-y-auto pe-2 text-lead leading-8 whitespace-pre-line text-ink-2"
-        >
-          {state.text}
-        </p>
-      ) : (
-        <div className="py-6">
-          <p className="text-body text-ink-2">{messages().player.noLyrics}</p>
-          <p className="mt-1.5 text-meta text-ink-3">
-            {messages().player.lyricsHint}
-          </p>
-        </div>
       )}
     </div>
   );
