@@ -37,7 +37,9 @@ export function Switch({
         onClick={() => onChange(!checked)}
         className={cn(
           "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-(--duration-standard)",
-          checked ? "bg-blue" : "bg-lifted ring-1 ring-line-strong ring-inset",
+          checked
+            ? "bg-blue shadow-[0_0_14px_color-mix(in_srgb,var(--color-accent-soft)_45%,transparent)]"
+            : "bg-lifted ring-1 ring-line-strong ring-inset",
         )}
       >
         <span

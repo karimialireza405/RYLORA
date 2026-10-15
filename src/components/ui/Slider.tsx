@@ -57,10 +57,11 @@ export function Slider({ value, min = 0, max, step = 1, label, valueText, disabl
       }}
       onPointerUp={() => setDragging(false)}
     >
-      <RadixSlider.Track className={cn("relative grow overflow-hidden rounded-full bg-white/12", heights[size])}>
+      <RadixSlider.Track className={cn("relative grow rounded-full bg-white/12", heights[size])}>
         <RadixSlider.Range
           className={cn(
             "absolute h-full rounded-full transition-colors duration-(--duration-micro)",
+            "shadow-[0_0_8px_color-mix(in_srgb,var(--now-tint)_60%,transparent),0_0_18px_color-mix(in_srgb,var(--now-tint)_30%,transparent)]",
             dragging ? "bg-blue-soft" : "bg-blue group-hover:bg-blue-soft group-focus-within:bg-blue-soft",
           )}
         />
@@ -69,7 +70,7 @@ export function Slider({ value, min = 0, max, step = 1, label, valueText, disabl
         aria-label={label}
         aria-valuetext={valueText}
         className={cn(
-          "relative block size-3 rounded-full bg-ink shadow-[0_2px_6px_rgb(0_0_0/0.5)]",
+          "relative block size-3 rounded-full bg-ink shadow-[0_2px_6px_rgb(0_0_0/0.5),0_0_12px_color-mix(in_srgb,var(--now-tint)_70%,transparent)]",
           showThumb ? "scale-100" : "scale-0",
           "transition-transform duration-(--duration-micro) ease-(--ease-out)",
           "group-hover:scale-100 focus-visible:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-soft",

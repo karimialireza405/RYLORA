@@ -1,6 +1,7 @@
 import * as RadixSlider from "@radix-ui/react-slider";
 import { useEffect, useState } from "react";
 import { AudioScene } from "@/features/visualizer/AudioScene";
+import { usePlayer } from "@/stores/player";
 import { formatTime } from "@/utils/format";
 import { cn } from "@/utils/cn";
 import { messages } from "@/i18n";
@@ -22,6 +23,7 @@ export function WaveformSeek({
   trackId: number | null;
 }) {
   const [draft, setDraft] = useState<number | null>(null);
+  const accent = usePlayer((s) => s.current?.accent);
   useEffect(() => setDraft(null), [trackId]);
   const shown = draft ?? value,
     safeMax = Math.max(1, max);
@@ -46,7 +48,7 @@ export function WaveformSeek({
       onPointerCancel={() => setDraft(null)}
     >
       <div className="absolute inset-0 overflow-hidden rounded-sm">
-        <AudioScene mode="timeline" progress={shown / safeMax} />
+        <AudioScene mode="timeline" progress={shown / safeMax} accent={accent} />
       </div>
       <RadixSlider.Track className="relative h-full grow">
         <RadixSlider.Range className="absolute h-full" />

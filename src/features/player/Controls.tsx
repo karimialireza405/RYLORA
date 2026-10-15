@@ -41,8 +41,9 @@ export function PlayButton({
       disabled={!hasTrack}
       aria-label={playing ? messages().common.pause : messages().common.play}
       title={playing ? messages().player.pauseWithKey : messages().player.playWithKey}
+      data-playing={status === "playing" || undefined}
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center rounded-full bg-blue-soft text-obsidian",
+        "transport-play relative inline-flex shrink-0 items-center justify-center rounded-full bg-blue-soft text-obsidian",
         "shadow-transport transition-[transform,background-color] duration-(--duration-micro) ease-(--ease-out)",
         "hover:scale-[1.04] hover:bg-accent-hover active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
         dims,

@@ -141,7 +141,7 @@ export function AudioScene({
           ctx.globalAlpha = layer ? 0.22 : 0.95;
           ctx.lineWidth = layer ? 0.9 : 1.5;
           ctx.shadowColor = color;
-          ctx.shadowBlur = layer ? 4 : 9;
+          ctx.shadowBlur = layer ? 5 : 14;
           ctx.stroke();
           ctx.restore();
         }

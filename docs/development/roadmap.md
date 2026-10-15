@@ -6,7 +6,7 @@ notes live next to this file (`*-2026-10-1x.md`).
 ## Done
 
 **Foundation & design system** — Tauri 2 + React 19 + strict TypeScript + Tailwind 4
-tokens, bundled Urbanist and Vazirmatn fonts, custom title bar, Studio layout with
+tokens, bundled Italiana, Marcellus and Vazirmatn fonts with a layered glow system, custom title bar, Studio layout with
 a resizable Listening panel (Now playing / Queue / Info), Silver Graphite palette,
 toasts, dialogs, menus, tooltips, skeletons, empty states.
 

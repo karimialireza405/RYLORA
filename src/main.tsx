@@ -2,7 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 // Fonts are bundled locally (OFL-licensed) so typography never depends on the network.
-import "@fontsource-variable/urbanist";
+import "@fontsource/italiana";
+import "@fontsource/marcellus";
 import "@fontsource-variable/vazirmatn";
 import "./styles/globals.css";
 

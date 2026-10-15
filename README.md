@@ -101,4 +101,4 @@ scripts/             test-media generator
 
 Tauri 2 · Rust · rodio/symphonia · lofty · SQLite (rusqlite) · React 19 ·
 TypeScript (strict) · Vite · Tailwind CSS 4 · Radix UI · Motion · Zustand ·
-TanStack Virtual · Lucide · Urbanist & Vazirmatn (bundled, SIL OFL).
+TanStack Virtual · Lucide · Italiana, Marcellus & Vazirmatn (bundled, SIL OFL).

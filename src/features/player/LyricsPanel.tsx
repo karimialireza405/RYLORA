@@ -142,7 +142,7 @@ function SyncedLyrics({ lines }: { lines: LyricLine[] }) {
               className={cn(
                 "bidi block w-full rounded-md px-2 py-1.5 text-lead leading-7 transition-[color,opacity,transform] duration-300 ease-(--ease-out) hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-blue-soft",
                 current
-                  ? "font-medium text-ink opacity-100 motion-safe:scale-[1.02]"
+                  ? "glow-live font-medium text-ink opacity-100 motion-safe:scale-[1.02]"
                   : i < active
                     ? "text-ink-3 opacity-60"
                     : "text-ink-2 opacity-80",

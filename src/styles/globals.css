@@ -43,16 +43,14 @@
   --color-warning: #ffc861;
 
   /* ---------------------------------------------------------------- type */
-  /* Urbanist light throughout the product, Persian Vazirmatn fallback.
-     All fonts are bundled for offline use. */
+  /* Italiana (high-contrast display) for titles, Marcellus (flared, readable at small
+     sizes) for everything else; Persian falls back to Vazirmatn. All bundled, SIL OFL. */
   --font-display:
-    "Urbanist Variable", "Vazirmatn Variable", ui-sans-serif, system-ui,
-    sans-serif;
+    "Italiana", "Vazirmatn Variable", ui-serif, Georgia, serif;
   --font-caps:
-    "Urbanist Variable", "Vazirmatn Variable", ui-sans-serif, system-ui,
-    sans-serif;
+    "Marcellus", "Vazirmatn Variable", ui-serif, Georgia, serif;
   --font-sans:
-    "Urbanist Variable", "Vazirmatn Variable", ui-sans-serif, system-ui,
+    "Marcellus", "Vazirmatn Variable", ui-sans-serif, system-ui,
     "Segoe UI", sans-serif;
 
   --text-overline: 0.6875rem; /* 11 */
@@ -96,10 +94,29 @@
     0 0 0 1px rgb(255 255 255 / 0.08), 0 16px 40px -8px rgb(0 0 0 / 0.7);
   --shadow-bar: 0 -1px 0 0 rgb(255 255 255 / 0.05);
   --shadow-transport:
-    0 0 22px -4px color-mix(in srgb, var(--color-accent-soft) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--now-tint) 30%, transparent),
+    0 0 22px 2px color-mix(in srgb, var(--now-tint) 42%, transparent),
+    0 0 56px 4px color-mix(in srgb, var(--now-tint) 22%, transparent),
     0 6px 20px -6px rgb(0 0 0 / 0.6);
-  --shadow-accent-line: 0 0 12px color-mix(in srgb, var(--color-accent-soft) 30%, transparent);
-  --shadow-accent-focus: 0 0 18px color-mix(in srgb, var(--color-accent-soft) 20%, transparent);
+  --shadow-accent-line:
+    0 0 6px color-mix(in srgb, var(--color-accent-soft) 75%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-accent-soft) 45%, transparent);
+  --shadow-accent-focus:
+    0 0 0 4px color-mix(in srgb, var(--color-accent-soft) 12%, transparent),
+    0 0 22px color-mix(in srgb, var(--color-accent-soft) 32%, transparent);
+  /* Glow: silver on titles, the playing song's cover colour (--now-tint) on live controls. */
+  --glow-title:
+    0 0 1px rgb(255 255 255 / 0.45),
+    0 0 14px color-mix(in srgb, var(--color-accent-soft) 62%, transparent),
+    0 0 36px color-mix(in srgb, var(--color-accent-soft) 34%, transparent),
+    0 0 84px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  --glow-text:
+    0 0 10px color-mix(in srgb, var(--color-accent-soft) 40%, transparent),
+    0 0 26px color-mix(in srgb, var(--color-accent-soft) 18%, transparent);
+  --glow-live:
+    0 0 8px color-mix(in srgb, var(--now-tint) 85%, transparent),
+    0 0 24px color-mix(in srgb, var(--now-tint) 50%, transparent),
+    0 0 48px color-mix(in srgb, var(--now-tint) 22%, transparent);
 
   /* ---------------------------------------------------------------- motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -111,6 +128,17 @@
 }
 
 /* ---------------------------------------------------------------- base */
+
+:root {
+  --now-tint: var(--color-accent-soft);
+}
+
+/* Fixed-width Latin digits for clocks and counters, from the system UI font. */
+@font-face {
+  font-family: "Rylora Numerals";
+  src: local("Segoe UI Variable Text"), local("Segoe UI");
+  unicode-range: U+0020-0040;
+}
 
 @layer base {
   :root {
@@ -174,6 +202,7 @@
   :focus-visible {
     outline: 2px solid var(--color-blue-soft);
     outline-offset: 2px;
+    box-shadow: var(--shadow-accent-focus);
     border-radius: var(--radius-sm);
   }
 
@@ -215,18 +244,19 @@
 
   /* Light is concentrated on headings and selected content, not tiny metadata. */
   .glow {
-    text-shadow:
-      0 0 16px color-mix(in srgb, var(--color-accent-soft) 34%, transparent),
-      0 0 40px color-mix(in srgb, var(--color-accent) 16%, transparent);
+    text-shadow: var(--glow-title);
   }
-  /* Display line boxes must fit both Urbanist and Persian fallback descenders. */
+  .glow-live {
+    text-shadow: var(--glow-live);
+  }
+  /* Display line boxes must fit both the display face and Persian fallback descenders. */
   .glow-room {
     padding: 0;
     margin-inline: 0;
     max-width: 100%;
   }
   .glow-soft {
-    text-shadow: 0 0 12px color-mix(in srgb, var(--color-accent-soft) 28%, transparent);
+    text-shadow: var(--glow-text);
   }
   .artwork-glow {
     box-shadow:
@@ -249,21 +279,59 @@
     z-index: -1;
     background: radial-gradient(
       ellipse,
-      color-mix(in srgb, var(--art-tint) 28%, transparent),
+      color-mix(in srgb, var(--art-tint) 38%, transparent),
       transparent 70%
     );
-    filter: blur(24px);
-    opacity: 0.8;
+    filter: blur(26px);
+    opacity: 0.9;
   }
   [data-vinyl-cover][data-playing="true"]::before {
     animation: cover-breathe 5s ease-in-out infinite;
   }
   h1,
   h2 {
-    text-shadow: 0 0 20px color-mix(in srgb, var(--color-accent-soft) 20%, transparent);
+    text-shadow: var(--glow-title);
+  }
+  h3 {
+    text-shadow: var(--glow-text);
   }
   .text-blue-soft {
-    text-shadow: 0 0 12px color-mix(in srgb, var(--color-accent-soft) 24%, transparent);
+    text-shadow: var(--glow-text);
+  }
+  /* The page you are on: lit label, glowing icon and indicator. */
+  [aria-current="page"] {
+    text-shadow: var(--glow-live);
+  }
+  [aria-current="page"] svg {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--now-tint) 70%, transparent));
+  }
+  [aria-current="page"] .nav-indicator::before {
+    box-shadow:
+      0 0 8px color-mix(in srgb, var(--now-tint) 85%, transparent),
+      0 0 18px color-mix(in srgb, var(--now-tint) 45%, transparent);
+  }
+  /* A thin light along the top of the player bar, in the playing song's colour. */
+  .playbar-light::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 8%;
+    top: -1px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--now-tint) 90%, white 10%) 50%,
+      transparent
+    );
+    box-shadow:
+      0 0 10px 1px color-mix(in srgb, var(--now-tint) 55%, transparent),
+      0 0 28px 2px color-mix(in srgb, var(--now-tint) 25%, transparent);
+    opacity: 0.85;
+  }
+  /* The main play button breathes while music plays. */
+  .transport-play[data-playing] {
+    animation: halo-breathe 3.2s ease-in-out infinite;
   }
   /* Quiet labels share the same readable type as the controls. */
   .caps {
@@ -273,20 +341,23 @@
     letter-spacing: 0.015em;
   }
   .tabular {
+    /* Marcellus has no fixed-width digits: clocks use Segoe UI (Latin) / Vazirmatn (Persian). */
+    font-family: "Rylora Numerals", "Vazirmatn Variable", var(--font-sans);
     font-variant-numeric: tabular-nums;
   }
   .font-display {
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.4;
-    letter-spacing: -0.025em;
-    text-shadow: 0 0 22px color-mix(in srgb, var(--color-accent-soft) 20%, transparent);
+    letter-spacing: 0.01em;
+    text-shadow: var(--glow-title);
   }
   .brand-wordmark {
-    font-family: "Urbanist Variable", sans-serif;
-    font-size: 18px;
-    font-weight: 350;
-    letter-spacing: 0.24em;
-    text-shadow: 0 0 18px color-mix(in srgb, var(--color-accent-soft) 40%, transparent);
+    font-family: "Italiana", serif;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.26em;
+    text-shadow: var(--glow-title);
+    animation: wordmark-glow 7s ease-in-out infinite;
   }
   .home-page {
     container-type: inline-size;
@@ -498,6 +569,32 @@ html[data-motion="reduced"] *::after {
   }
 }
 
+@keyframes halo-breathe {
+  0%,
+  100% {
+    box-shadow: var(--shadow-transport);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--now-tint) 40%, transparent),
+      0 0 30px 4px color-mix(in srgb, var(--now-tint) 55%, transparent),
+      0 0 80px 8px color-mix(in srgb, var(--now-tint) 28%, transparent),
+      0 6px 20px -6px rgb(0 0 0 / 0.6);
+  }
+}
+@keyframes wordmark-glow {
+  0%,
+  100% {
+    text-shadow: var(--glow-title);
+  }
+  50% {
+    text-shadow:
+      0 0 1px rgb(255 255 255 / 0.5),
+      0 0 16px color-mix(in srgb, var(--color-accent-soft) 65%, transparent),
+      0 0 44px color-mix(in srgb, var(--color-accent-soft) 34%, transparent),
+      0 0 90px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+}
 @keyframes cover-breathe {
   0%,
   100% {

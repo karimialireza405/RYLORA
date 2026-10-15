@@ -32,7 +32,7 @@ export function PlaybackBar() {
   return (
     <footer
       aria-label={t.playbackBar.region}
-      className="relative z-40 grid h-[var(--playbar-height)] grid-cols-[minmax(200px,1fr)_minmax(320px,1.6fr)_minmax(190px,1fr)] items-center gap-4 border-t border-line bg-base px-5"
+      className="playbar-light relative z-40 grid h-[var(--playbar-height)] grid-cols-[minmax(200px,1fr)_minmax(320px,1.6fr)_minmax(190px,1fr)] items-center gap-4 border-t border-line bg-base px-5"
     >
       {/* Now playing */}
       <div className="flex min-w-0 items-center gap-3.5">

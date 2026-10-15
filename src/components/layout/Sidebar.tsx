@@ -319,7 +319,7 @@ function NavGroup({ items, route }: { items: NavItemDef[]; route: Route }) {
               {active && (
                 <motion.span
                   layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-md bg-raised before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-blue-soft"
+                  className="nav-indicator absolute inset-0 rounded-md bg-raised before:absolute before:inset-y-2 before:start-0 before:w-[3px] before:rounded-full before:bg-blue-soft"
                   transition={{ type: "spring", stiffness: 480, damping: 40 }}
                 ></motion.span>
               )}

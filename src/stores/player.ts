@@ -30,7 +30,16 @@ export const useProgress = create<{ positionMs: number; durationMs: number }>(()
   durationMs: 0,
 }));
 
+/** Live controls glow in the playing song's cover colour. */
+function applyNowTint(accent: string | null | undefined): void {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement.style;
+  if (accent) root.setProperty("--now-tint", accent);
+  else root.removeProperty("--now-tint");
+}
+
 export function applySnapshot(snapshot: PlayerSnapshot): void {
+  applyNowTint(snapshot.current?.accent);
   usePlayer.setState({ ...snapshot, ready: true });
   useProgress.setState({ positionMs: snapshot.positionMs, durationMs: snapshot.durationMs });
 }
