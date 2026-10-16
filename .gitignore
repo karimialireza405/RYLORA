@@ -8,3 +8,20 @@ test-media/
 .vite/
 .local/
 /release/
+
+# Local credentials, signing keys and runtime databases
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pfx
+*.p12
+*.key
+*.keystore
+*.jks
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.db
+*.db-*
