@@ -54,7 +54,12 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_window_state::Builder::new().build())
+        // Never restore "hidden": the main window is hidden while the mini player is open.
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(tauri_plugin_window_state::StateFlags::all() & !tauri_plugin_window_state::StateFlags::VISIBLE)
+                .build(),
+        )
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(commands::updates::PendingUpdate::default())
         .register_asynchronous_uri_scheme_protocol("artwork", |ctx, request, responder| {
@@ -131,7 +136,14 @@ pub fn run() {
             commands::updates::updates_check,
             commands::updates::updates_install,
             commands::updates::updates_verify_download,
+            commands::windows::window_open_mini,
+            commands::windows::window_close_mini,
         ])
+        .on_window_event(|window, event| {
+            if window.label() == commands::windows::MINI_LABEL && matches!(event, tauri::WindowEvent::Destroyed) {
+                commands::windows::on_mini_closed(window.app_handle());
+            }
+        })
         .build(tauri::generate_context!())
         .expect("error while building RYLORA")
         .run(|app, event| {

@@ -12,6 +12,7 @@ use crate::error::{AppError, AppResult};
 /// (key, allowed values). An empty slice means "boolean".
 const ALLOWED: &[(&str, &[&str])] = &[
     ("motion", &["system", "reduced", "full"]),
+    ("accentColor", &["silver", "gold", "rose", "cover"]),
     ("ambientBackground", &[]),
     ("visualizer", &[]),
     ("scanOnStartup", &[]),

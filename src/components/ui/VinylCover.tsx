@@ -1,5 +1,6 @@
 import { memo, type CSSProperties, type ReactNode } from "react";
 import { useAudioPulse } from "@/hooks/useAudioPulse";
+import { usePlayer, useProgress } from "@/stores/player";
 
 import { type ArtworkSize } from "@/services/artwork";
 import { cn, hueOf } from "@/utils/cn";
@@ -27,6 +28,8 @@ interface VinylCoverProps {
   pulse?: boolean;
   /** Disc slides further out of the sleeve (e.g. while playing). */
   out?: boolean;
+  /** A turntable arm that lowers onto the disc while it spins and drifts inward as the song plays. */
+  tonearm?: boolean;
   /** Hide sleeve lettering for very small renders. */
   bare?: boolean;
   /** Full artwork with a narrow paper edge, used in the listening stage. */
@@ -67,6 +70,7 @@ export const VinylCover = memo(function VinylCover({
   spinning = false,
   pulse = spinning,
   out = false,
+  tonearm = false,
   bare = false,
   fullBleed = false,
   inset,
@@ -211,6 +215,59 @@ export const VinylCover = memo(function VinylCover({
         />
       </div>
       </div>
+      {tonearm && <Tonearm />}
     </div>
   );
 });
+
+/*
+ * Tonearm geometry, in units where the cover is 130 x 100 (its 1.3 : 1 box). With the
+ * disc slid out, its centre is at (81.8, 50) and its radius 47.5. The arm pivots at
+ * (124, 10) with a 62-unit reach: resting at -10 deg its stylus is just off the record;
+ * playing, it sits on the outer grooves at 8 deg and moves to the inner grooves (23 deg)
+ * by the end of the song.
+ */
+const ARM_REST = -10;
+const ARM_START = 8;
+const ARM_END = 23;
+
+function Tonearm() {
+  // Follows playback itself, so the arm still lowers when reduced motion stops the disc spinning.
+  const playing = usePlayer((s) => s.status === "playing");
+  const ratio = useProgress((p) => (p.durationMs > 0 ? Math.min(1, p.positionMs / p.durationMs) : 0));
+  const angle = playing ? ARM_START + (ARM_END - ARM_START) * ratio : ARM_REST;
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 130 100"
+      className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+      style={{ filter: "drop-shadow(0 1.2px 1.4px rgb(0 0 0 / 0.6)) drop-shadow(0 4px 8px rgb(0 0 0 / 0.45))" }}
+    >
+      <defs>
+        <linearGradient id="tonearm-metal" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#8f96a2" />
+          <stop offset="0.45" stopColor="#f2f4f8" />
+          <stop offset="1" stopColor="#7d8490" />
+        </linearGradient>
+      </defs>
+      {/* Base plate, fixed. */}
+      <circle cx="124" cy="10" r="7.5" fill="#1d1e23" stroke="#3a3c44" strokeWidth="0.6" />
+      <circle cx="124" cy="10" r="5" fill="#2a2c32" />
+      <g
+        style={{
+          transform: `translate(124px, 10px) rotate(${angle}deg)`,
+          transition: "transform 0.9s cubic-bezier(0.32, 0.72, 0, 1)",
+        }}
+      >
+        {/* Counterweight behind the pivot. */}
+        <rect x="-3.4" y="-13" width="6.8" height="8" rx="1.6" fill="url(#tonearm-metal)" />
+        <circle r="3.4" fill="url(#tonearm-metal)" stroke="#5c616c" strokeWidth="0.4" />
+        {/* Tube with the usual bend before the headshell. */}
+        <path d="M0 2 L0 43 L-3.2 51.5" fill="none" stroke="url(#tonearm-metal)" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Headshell and stylus. */}
+        <path d="M-1.6 50.5 L-4.8 50 L-6.6 60.5 L-3 61.4 Z" fill="#d9dde4" stroke="#6b717c" strokeWidth="0.35" />
+        <circle cx="-4.6" cy="61.6" r="0.75" fill="var(--now-tint, #e8ebf0)" />
+      </g>
+    </svg>
+  );
+}

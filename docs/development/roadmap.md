@@ -87,6 +87,18 @@ genuine update downloaded and verified; a one-byte-modified download and a manif
 announcing a different version than the signed one were both rejected. See
 [releasing.md](releasing.md).
 
+**Brand & interface (2026-10-16)** — new mark: a record sleeve with a semicircular
+die-cut and the disc showing through it (app icon, title bar, About, favicon), an
+animated start-up (the disc slides out and the mark lights up), and the same sleeve
+on every empty state and the scanning indicator. Persian text set in Peyda.
+Accent colour choice (silver, gold, rose, or the playing cover). Now Playing and the
+full-screen view have a turntable arm that lowers onto the record while playing and
+tracks inward through the song. Home greets by time of day and adds Recently played
+and Most played shelves, lit by the record's colour. Album pages show a larger
+record and list songs as Side A / Side B (or by disc). The full-screen view has a
+karaoke lyrics mode (L) over the blurred cover. A mini player window (always on
+top) swaps in for the main window; however it is closed, the main window returns.
+
 **Code signing pipeline** — `scripts/sign.ps1` signs the app, the NSIS plugins and
 the installer during `tauri build` when a certificate (`.pfx`, Windows store /
 token, or Azure Trusted Signing) is configured, and leaves them unsigned otherwise.

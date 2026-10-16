@@ -154,6 +154,10 @@ export const en = {
   },
 
   home: {
+    greetings: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening", night: "Late-night listening" },
+    recentlyPlayed: "Recently played",
+    mostPlayed: "Most played",
+    plays: (n: number) => (n === 1 ? "Played once" : `Played ${formatNumber(n)} times`),
     title: "Home",
     browseLibrary: "Browse library",
     unavailable: "Unavailable music",
@@ -343,6 +347,9 @@ export const en = {
     recordCovers: "Record covers",
     recordCoversHint: "Songs, albums and playlists share a sleeve and disc in every view.",
     motion: "Motion",
+    accent: "Accent colour",
+    accentHint: "Colours buttons, highlights and the glow. “Cover” follows the song that is playing.",
+    accents: { silver: "Silver", gold: "Gold", rose: "Rose", cover: "Cover" },
     motionHint: "“System” follows Windows’ animation setting.",
     motionSystem: "System",
     motionReduced: "Reduced",
@@ -402,6 +409,7 @@ export const en = {
     reorder: "Reorder (playlists and queue)",
     remove: "Remove from playlist",
     immersiveGroup: "Immersive mode",
+    karaoke: "Full-screen lyrics",
     fullscreen: "Toggle fullscreen",
     exit: "Exit",
     or: "or",
@@ -518,6 +526,8 @@ export const en = {
   },
 
   album: {
+    side: (label: string) => `Side ${label}`,
+    disc: (label: string) => `Disc ${label}`,
     overline: "Album",
     notFound: "Album not found",
     notFoundHint: "It may have been removed from your library.",
@@ -577,6 +587,12 @@ export const en = {
     addFailed: "Couldn't add to playlist",
     renameFailed: "Couldn't rename the playlist",
     deleteFailed: "Couldn't delete the playlist",
+  },
+
+  mini: {
+    open: "Mini player",
+    expand: "Back to the full window",
+    failed: "Couldn’t open the mini player",
   },
 
   sound: {

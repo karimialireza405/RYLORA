@@ -106,6 +106,8 @@ export function createTauriBackend(): Backend {
         close: () => win.close(),
         setFullscreen: (on) => win.setFullscreen(on),
         isFullscreen: () => win.isFullscreen(),
+        openMini: () => invoke("window_open_mini"),
+        closeMini: () => invoke("window_close_mini"),
         onResized: (handler) => win.onResized(() => handler()),
         onFileDrop: (handler) =>
           getCurrentWebview().onDragDropEvent((event) => {

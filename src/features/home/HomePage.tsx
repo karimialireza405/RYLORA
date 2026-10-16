@@ -2,6 +2,7 @@ import { ArrowRight, FileAudio, FolderPlus, Pause, Play } from "lucide-react";
 import { useMemo } from "react";
 import { Page } from "@/components/layout/AppShell";
 import { VinylCover } from "@/components/ui/VinylCover";
+import { LibraryCover } from "@/components/ui/LibraryCover";
 import { Button } from "@/components/ui/Button";
 import { ContextMenuArea } from "@/components/ui/Menu";
 import { CardGridSkeleton } from "@/components/feedback/EmptyState";
@@ -13,6 +14,8 @@ import { navigate } from "@/stores/navigation";
 import { player, usePlayer } from "@/stores/player";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { Track } from "@/types/domain";
+import type { CSSProperties } from "react";
+import { partOfDay } from "./greeting";
 import { useT } from "@/i18n";
 
 /** A focused listening entry point: one continuation and one shelf of other records. */
@@ -42,13 +45,34 @@ export function HomePage() {
       .slice(0, 4),
     [albums, continuation?.albumId],
   );
+  const playCounts = useLibrary((s) => s.playCounts);
+  const recentlyPlayed = useMemo(() => {
+    const seen = new Set<number>();
+    const list: Track[] = [];
+    for (const entry of history) {
+      const track = trackById.get(entry.trackId);
+      if (!track || track.missing || seen.has(track.id)) continue;
+      seen.add(track.id);
+      list.push(track);
+      if (list.length === SHELF_SIZE) break;
+    }
+    return list;
+  }, [history, trackById]);
+  const mostPlayed = useMemo(
+    () =>
+      playable
+        .filter((track) => (playCounts[track.id] ?? 0) > 0)
+        .sort((a, b) => (playCounts[b.id] ?? 0) - (playCounts[a.id] ?? 0))
+        .slice(0, SHELF_SIZE),
+    [playable, playCounts],
+  );
   if (!loaded) return <Page><CardGridSkeleton /></Page>;
   if (!tracks.length) return <Welcome scanning={scanning} />;
   return (
     <Page className="home-page">
       <header className="home-header">
         <div>
-          <h1 className="font-display text-display text-ink">{t.home.title}</h1>
+          <h1 className="font-display text-display text-ink">{t.home.greetings[partOfDay(new Date())]}</h1>
           <p className="mt-1 text-meta text-ink-3">
             {t.count.songs(tracks.length)} <span className="px-1.5 text-ink-4">·</span> {t.count.albums(albums.length)}
           </p>
@@ -72,6 +96,18 @@ export function HomePage() {
             {t.home.addMusicFolder}
           </Button>
         </section>
+      )}
+
+      {recentlyPlayed.length > 0 && (
+        <TrackShelf id="home-recent" title={t.home.recentlyPlayed} tracks={recentlyPlayed} />
+      )}
+      {mostPlayed.length > 2 && (
+        <TrackShelf
+          id="home-most"
+          title={t.home.mostPlayed}
+          tracks={mostPlayed}
+          note={(track) => t.home.plays(playCounts[track.id] ?? 0)}
+        />
       )}
 
       {records.length > 0 && (
@@ -110,7 +146,11 @@ function ContinueRecord({ track, hasHistory }: { track: Track; hasHistory: boole
   };
   return (
     <ContextMenuArea entries={() => buildTrackMenu({ tracks: [track], play })}>
-      <section className="home-continue" aria-label={t.home.continueListening}>
+      <section
+        className="home-continue"
+        aria-label={t.home.continueListening}
+        style={{ "--hero-tint": track.accent ?? "var(--color-accent-soft)" } as CSSProperties}
+      >
         <button
           type="button"
           aria-label={t.common.openNamed(track.album)}
@@ -147,6 +187,41 @@ function ContinueRecord({ track, hasHistory }: { track: Track; hasHistory: boole
         </div>
       </section>
     </ContextMenuArea>
+  );
+}
+
+const SHELF_SIZE = 6;
+
+/** A row of songs; choosing one plays the row from there. */
+function TrackShelf({ id, title, tracks, note }: { id: string; title: string; tracks: Track[]; note?: (t: Track) => string }) {
+  const currentId = usePlayer((s) => s.current?.id);
+  const ids = tracks.map((track) => track.id);
+  return (
+    <section className="home-records" aria-labelledby={`${id}-title`}>
+      <div className="home-shelf-heading">
+        <h2 id={`${id}-title`} className="text-lead font-semibold text-ink">{title}</h2>
+      </div>
+      <ul className="home-track-grid">
+        {tracks.map((track, i) => (
+          <li key={track.id}>
+            <ContextMenuArea entries={() => buildTrackMenu({ tracks: [track], play: () => player.playTracks(ids, i) })}>
+              <button
+                type="button"
+                onClick={() => player.playTracks(ids, i)}
+                className="group flex w-full items-center gap-3 rounded-lg p-2 text-start transition-colors hover:bg-raised/60"
+                aria-current={currentId === track.id ? "true" : undefined}
+              >
+                <LibraryCover hash={track.artwork} seed={track.album} accent={track.accent} className="h-12 w-[62px] shrink-0" />
+                <span className="min-w-0">
+                  <span className={`bidi block truncate text-body ${currentId === track.id ? "glow-live text-ink" : "text-ink"}`}>{track.title}</span>
+                  <span className="bidi block truncate text-meta text-ink-3">{note ? note(track) : track.artist}</span>
+                </span>
+              </button>
+            </ContextMenuArea>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

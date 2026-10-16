@@ -12,21 +12,26 @@ import { activeLineIndex, interpolatePosition } from "./lyrics";
 /** After the listener scrolls the lyrics themselves, follow the song again after this long. */
 const MANUAL_SCROLL_HOLD_MS = 4000;
 
-export function LyricsPanel({ track }: { track: Track }) {
+/** Lyrics for a track: `undefined` while loading, `null` when there are none. */
+export function useLyrics(trackId: number): Lyrics | null | undefined {
   const [state, setState] = useState<{ id: number; lyrics: Lyrics | null } | null>(null);
   useEffect(() => {
     let cancelled = false;
     backend()
-      .player.lyrics(track.id)
-      .then((lyrics) => !cancelled && setState({ id: track.id, lyrics }))
-      .catch(() => !cancelled && setState({ id: track.id, lyrics: null }));
+      .player.lyrics(trackId)
+      .then((lyrics) => !cancelled && setState({ id: trackId, lyrics }))
+      .catch(() => !cancelled && setState({ id: trackId, lyrics: null }));
     return () => {
       cancelled = true;
     };
-  }, [track.id]);
+  }, [trackId]);
+  return !state || state.id !== trackId ? undefined : state.lyrics;
+}
 
-  const loading = !state || state.id !== track.id;
-  const lyrics = loading ? null : state.lyrics;
+export function LyricsPanel({ track }: { track: Track }) {
+  const result = useLyrics(track.id);
+  const loading = result === undefined;
+  const lyrics = result ?? null;
   const t = messages().player;
   const source = lyrics
     ? lyrics.synced
@@ -62,8 +67,32 @@ export function LyricsPanel({ track }: { track: Track }) {
   );
 }
 
+/** Big, centred lyrics for the full-screen player (karaoke style). */
+export function StageLyrics({ track }: { track: Track }) {
+  const lyrics = useLyrics(track.id);
+  const t = messages().player;
+  if (lyrics === undefined) return null;
+  if (!lyrics) {
+    return (
+      <div className="grid h-full place-items-center text-center">
+        <div>
+          <p className="font-display text-[clamp(22px,3vh,32px)] text-ink-2">{t.noLyrics}</p>
+          <p className="mx-auto mt-3 max-w-[48ch] text-meta text-ink-3">{t.lyricsHint}</p>
+        </div>
+      </div>
+    );
+  }
+  if (lyrics.synced) return <SyncedLyrics key={track.id} lines={lyrics.lines} variant="stage" />;
+  return (
+    <p className="bidi selectable h-full overflow-y-auto px-4 py-[20vh] text-center text-[clamp(18px,2.6vh,28px)] leading-[1.7] whitespace-pre-line text-ink-2 [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]">
+      {lyrics.lines.map((l) => l.text).join("\n")}
+    </p>
+  );
+}
+
 /** Follows the playing position; the current line is lit and kept in view. Click a line to jump to it. */
-function SyncedLyrics({ lines }: { lines: LyricLine[] }) {
+function SyncedLyrics({ lines, variant = "panel" }: { lines: LyricLine[]; variant?: "panel" | "stage" }) {
+  const stage = variant === "stage";
   const playing = usePlayer((s) => s.status === "playing");
   const reduced = useReducedMotion();
   const [active, setActive] = useState(() => activeLineIndex(lines, useProgress.getState().positionMs));
@@ -124,7 +153,10 @@ function SyncedLyrics({ lines }: { lines: LyricLine[] }) {
       onWheel={hold}
       onTouchMove={hold}
       aria-label={messages().player.lyrics}
-      className="relative min-h-0 flex-1 overflow-y-auto pe-2 [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)]"
+      className={cn(
+        "relative min-h-0 flex-1 overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_14%,black_86%,transparent)]",
+        stage ? "h-full px-4 text-center" : "pe-2",
+      )}
     >
       {lines.map((line, i) => {
         const current = i === active;
@@ -140,9 +172,12 @@ function SyncedLyrics({ lines }: { lines: LyricLine[] }) {
                 player.seek(time);
               }}
               className={cn(
-                "bidi block w-full rounded-md px-2 py-1.5 text-lead leading-7 transition-[color,opacity,transform] duration-300 ease-(--ease-out) hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-blue-soft",
+                "bidi block w-full rounded-md transition-[color,opacity,transform] duration-300 ease-(--ease-out) hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-blue-soft",
+                stage
+                  ? "py-2.5 text-center text-[clamp(20px,3.2vh,38px)] leading-snug"
+                  : "px-2 py-1.5 text-lead leading-7",
                 current
-                  ? "glow-live font-medium text-ink opacity-100 motion-safe:scale-[1.02]"
+                  ? cn("glow-live font-medium text-ink opacity-100", stage ? "motion-safe:scale-[1.06]" : "motion-safe:scale-[1.02]")
                   : i < active
                     ? "text-ink-3 opacity-60"
                     : "text-ink-2 opacity-80",

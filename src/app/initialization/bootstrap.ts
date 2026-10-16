@@ -6,7 +6,7 @@ import { checkOnLaunch, onUpdateProgress } from "@/stores/updates";
 import { refreshLibrary, useLibrary } from "@/stores/library";
 import { applySnapshot, usePlayer, useProgress } from "@/stores/player";
 import { toast } from "@/stores/toasts";
-import { applyMotionPreference, useUi } from "@/stores/ui";
+import { applyAccentPreference, applyMotionPreference, useUi } from "@/stores/ui";
 import type { Preferences } from "@/types/domain";
 import { messages } from "@/i18n";
 
@@ -29,6 +29,7 @@ async function start(): Promise<void> {
   const prefs = await api.settings.get().catch((): Preferences => ({}));
   useUi.setState({ prefs, nowPlayingPanelOpen: prefs.panelVisible !== "false" });
   applyMotionPreference(prefs.motion);
+  applyAccentPreference(prefs.accentColor);
 
   let refreshTimer = 0;
   const scheduleRefresh = () => {

@@ -16,6 +16,7 @@ import { player, usePlayer } from "@/stores/player";
 import { formatLongDuration, joinMeta } from "@/utils/format";
 import { useT } from "@/i18n";
 import { compareAlbumOrder } from "@/utils/tracks";
+import { albumSides } from "./sides";
 
 export function AlbumPage({ id }: { id: number }) {
   const t = useT();
@@ -32,6 +33,7 @@ export function AlbumPage({ id }: { id: number }) {
     () => (album ? albums.filter((a) => a.artistId === album.artistId && a.id !== album.id) : []),
     [albums, album],
   );
+  const sides = useMemo(() => albumSides(tracks), [tracks]);
   const genres = [...new Set(tracks.map((t) => t.genre).filter(Boolean))].slice(0, 2);
 
   if (!album) {
@@ -53,7 +55,7 @@ export function AlbumPage({ id }: { id: number }) {
         accent={album.accent}
         overline={t.album.overline}
         title={album.title}
-        art={<VinylCover fullBleed hash={album.artwork} seed={album.title} artist={album.artist} title={album.title} accent={album.accent} out={isCurrent} spinning={isCurrent && playing} style={{ height: "232px", width: "calc(232px * 1.3)" }} alt={t.album.coverAlt(album.title)} />}
+        art={<VinylCover fullBleed hash={album.artwork} seed={album.title} artist={album.artist} title={album.title} accent={album.accent} out spinning={isCurrent && playing} style={{ height: "clamp(220px, 30vh, 300px)", width: "calc(clamp(220px, 30vh, 300px) * 1.3)" }} alt={t.album.coverAlt(album.title)} />}
         meta={
           <>
             <button type="button" onClick={() => navigate({ name: "artist", id: album.artistId })} className="bidi font-semibold text-ink hover:underline">
@@ -106,13 +108,18 @@ export function AlbumPage({ id }: { id: number }) {
         }
       />
       <div className="mx-auto w-full max-w-[1680px] px-8">
-        <TrackTable
-          label={t.album.tracksLabel(album.title)}
-          variant="album"
-          albumArtist={album.artist}
-          tracks={tracks}
-          onPlay={(i) => playFrom(tracks, i, player.playTracks)}
-        />
+        {sides.map((side) => (
+          <section key={side.label} aria-label={side.kind === "disc" ? t.album.disc(side.label) : t.album.side(side.label)} className="mb-8">
+            {sides.length > 1 && <SideHeading kind={side.kind} label={side.label} durationMs={side.durationMs} count={side.tracks.length} />}
+            <TrackTable
+              label={t.album.tracksLabel(album.title)}
+              variant="album"
+              albumArtist={album.artist}
+              tracks={side.tracks}
+              onPlay={(i) => playFrom(tracks, side.offset + i, player.playTracks)}
+            />
+          </section>
+        ))}
         {moreByArtist.length > 0 && (
           <Shelf title={t.album.moreBy(album.artist)} onSeeAll={() => navigate({ name: "artist", id: album.artistId })}>
             <CardGrid singleRow>
@@ -123,6 +130,24 @@ export function AlbumPage({ id }: { id: number }) {
           </Shelf>
         )}
       </div>
+    </div>
+  );
+}
+
+/** "Side A" with a small half-disc, like the label on a record's run-out. */
+function SideHeading({ kind, label, durationMs, count }: { kind: "side" | "disc"; label: string; durationMs: number; count: number }) {
+  const t = useT();
+  return (
+    <div className="mb-2 flex items-center gap-3 border-b border-line px-2 pb-2.5">
+      <span
+        aria-hidden
+        className="grid size-7 place-items-center rounded-full font-display text-[15px] text-obsidian shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent-soft)_45%,transparent)]"
+        style={{ background: "radial-gradient(circle, var(--color-accent-soft) 0 52%, #18191d 54% 100%)" }}
+      >
+        {label}
+      </span>
+      <h2 className="text-lead text-ink">{kind === "disc" ? t.album.disc(label) : t.album.side(label)}</h2>
+      <span className="text-meta text-ink-3">{joinMeta([t.count.songs(count), formatLongDuration(durationMs)])}</span>
     </div>
   );
 }

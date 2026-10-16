@@ -133,6 +133,9 @@ export interface Backend {
       isFullscreen(): Promise<boolean>;
       onResized(handler: () => void): Promise<Unlisten>;
       onFileDrop(handler: (paths: string[], kind: "enter" | "leave" | "drop") => void): Promise<Unlisten>;
+      /** Swap the main window for the always-on-top mini player, and back. */
+      openMini(): Promise<void>;
+      closeMini(): Promise<void>;
     };
   };
 }

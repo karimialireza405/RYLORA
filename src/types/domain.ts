@@ -165,6 +165,7 @@ export interface AppError {
 
 export type Preferences = Partial<{
   motion: "system" | "reduced" | "full";
+  accentColor: "silver" | "gold" | "rose" | "cover";
   ambientBackground: "true" | "false";
   visualizer: "true" | "false";
   scanOnStartup: "true" | "false";

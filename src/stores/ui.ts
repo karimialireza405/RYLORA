@@ -14,6 +14,8 @@ interface UiState {
   immersive: boolean;
   shortcutsOpen: boolean;
   lyricsOpen: boolean;
+  /** Full-screen player shows big synced lyrics (karaoke). */
+  immersiveLyrics: boolean;
   searchQuery: string;
   dropActive: boolean;
   addMusicOpen: boolean;
@@ -31,6 +33,7 @@ export const useUi = create<UiState>(() => ({
   immersive: false,
   shortcutsOpen: false,
   lyricsOpen: false,
+  immersiveLyrics: false,
   searchQuery: "",
   dropActive: false,
   addMusicOpen: false,
@@ -40,6 +43,13 @@ export const useUi = create<UiState>(() => ({
 
 export function openNewPlaylist(trackIds: TrackId[] = []): void {
   useUi.setState({ newPlaylist: { open: true, trackIds } });
+}
+
+/** The interface accent: silver (default), gold, rose, or the playing song's cover colour. */
+export function applyAccentPreference(accent: Preferences["accentColor"]): void {
+  const root = document.documentElement;
+  if (!accent || accent === "silver") delete root.dataset.accent;
+  else root.dataset.accent = accent;
 }
 
 export function applyMotionPreference(motion: Preferences["motion"]): void {
@@ -55,6 +65,7 @@ export async function setPreference<K extends keyof Preferences>(
   const previous = useUi.getState().prefs;
   useUi.setState({ prefs: { ...previous, [key]: value } });
   if (key === "motion") applyMotionPreference(value as Preferences["motion"]);
+  if (key === "accentColor") applyAccentPreference(value as Preferences["accentColor"]);
   try {
     await backend().settings.set(key, value);
   } catch (e) {
@@ -64,6 +75,7 @@ export async function setPreference<K extends keyof Preferences>(
       if (previous[key] === undefined) delete restored[key];
       useUi.setState({ prefs: restored });
       if (key === "motion") applyMotionPreference(previous.motion);
+      if (key === "accentColor") applyAccentPreference(previous.accentColor);
     }
     notifyError(messages().errors.saveSetting, e);
   }

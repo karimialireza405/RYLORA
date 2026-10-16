@@ -157,6 +157,10 @@ export const fa: Messages = {
   },
 
   home: {
+    greetings: { morning: "صبح بخیر", afternoon: "ظهر بخیر", evening: "عصر بخیر", night: "شب خوش" },
+    recentlyPlayed: "اخیراً شنیده‌شده",
+    mostPlayed: "بیشترین پخش",
+    plays: (n: number) => `${formatNumber(n)} بار پخش`,
     title: "خانه",
     browseLibrary: "مرور کتابخانه",
     unavailable: "موسیقی در دسترس نیست",
@@ -346,6 +350,9 @@ export const fa: Messages = {
     recordCovers: "کاورهای صفحه‌ای",
     recordCoversHint: "آهنگ‌ها، آلبوم‌ها و پلی‌لیست‌ها در همهٔ نماها با جلد و صفحهٔ گرامافون نمایش داده می‌شوند.",
     motion: "حرکت",
+    accent: "رنگ اصلی",
+    accentHint: "رنگ دکمه‌ها، بخش‌های انتخاب‌شده و درخشش. «کاور» از رنگ آهنگی که پخش می‌شود پیروی می‌کند.",
+    accents: { silver: "نقره‌ای", gold: "طلایی", rose: "رزگلد", cover: "کاور" },
     motionHint: "«سیستم» از تنظیم انیمیشن ویندوز پیروی می‌کند.",
     motionSystem: "سیستم",
     motionReduced: "کم",
@@ -405,6 +412,7 @@ export const fa: Messages = {
     reorder: "تغییر ترتیب (پلی‌لیست‌ها و صف)",
     remove: "حذف از پلی‌لیست",
     immersiveGroup: "حالت سینمایی",
+    karaoke: "متن آهنگ تمام‌صفحه",
     fullscreen: "تمام‌صفحه / خروج از تمام‌صفحه",
     exit: "خروج",
     or: "یا",
@@ -521,6 +529,8 @@ export const fa: Messages = {
   },
 
   album: {
+    side: (label: string) => `روی ${label}`,
+    disc: (label: string) => `دیسک ${label.replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!)}`,
     overline: "آلبوم",
     notFound: "آلبوم پیدا نشد",
     notFoundHint: "شاید از کتابخانه حذف شده باشد.",
@@ -580,6 +590,12 @@ export const fa: Messages = {
     addFailed: "افزودن به پلی‌لیست انجام نشد",
     renameFailed: "تغییر نام پلی‌لیست انجام نشد",
     deleteFailed: "پلی‌لیست حذف نشد",
+  },
+
+  mini: {
+    open: "پخش‌کنندهٔ کوچک",
+    expand: "بازگشت به پنجرهٔ کامل",
+    failed: "پخش‌کنندهٔ کوچک باز نشد",
   },
 
   sound: {

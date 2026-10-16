@@ -30,9 +30,9 @@ export function CollectionHero({
     <div className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[460px] rtl:[--hero-x:82%]"
         style={{
-          background: `linear-gradient(180deg, color-mix(in srgb, ${tint} 7%, var(--color-obsidian)) 0%, transparent 80%)`,
+          background: `radial-gradient(ellipse 50% 90% at var(--hero-x, 18%) 45%, color-mix(in srgb, ${tint} 20%, transparent), transparent 70%), linear-gradient(180deg, color-mix(in srgb, ${tint} 9%, var(--color-obsidian)) 0%, transparent 85%)`,
         }}
       />
       <div className="relative mx-auto flex w-full max-w-[1680px] items-end gap-6 px-6 pt-7 pb-7">

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 
-import mark from "@/assets/brand/mark.svg";
+import { BrandEmblem } from "@/components/ui/BrandEmblem";
 import { Mosaic } from "@/components/ui/Artwork";
 import { LibraryCover } from "@/components/ui/LibraryCover";
 import { ContextMenuArea } from "@/components/ui/Menu";
@@ -115,12 +115,7 @@ export function Sidebar() {
         data-tauri-drag-region
         className="drag-region flex h-[var(--titlebar-height)] shrink-0 items-center gap-2.5 px-5"
       >
-        <img
-          src={mark}
-          alt=""
-          className="size-[22px] grayscale brightness-200"
-          draggable={false}
-        />
+        <BrandEmblem size={26} />
         <span className="brand-wordmark text-ink">RYLORA</span>
       </div>
 
@@ -240,7 +235,8 @@ export function Sidebar() {
         {scanning && (
           <div className="mb-2 px-2">
             <div className="flex items-center justify-between text-caption text-ink-3">
-              <span role="status">
+              <span role="status" className="flex items-center gap-2">
+                <BrandEmblem size={18} motion="spin" glow={false} />
                 {progress?.phase === "discovering" || !progress
                   ? t.nav.lookingForMusic
                   : t.nav.indexing}
@@ -254,7 +250,7 @@ export function Sidebar() {
             <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-lifted">
               <div
                 className={cn(
-                  "h-full rounded-full bg-blue-soft transition-[width] duration-300",
+                  "h-full rounded-full bg-blue-soft shadow-[0_0_8px_color-mix(in_srgb,var(--now-tint)_60%,transparent)] transition-[width] duration-300",
                   (!progress || !progress.total) && "w-1/3 animate-pulse",
                 )}
                 style={

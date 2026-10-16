@@ -103,6 +103,7 @@ export function NowPlayingPage() {
                   title={track.album}
                   accent={track.accent}
                   out
+                  tonearm
                   spinning={playing && !reduced}
                   alt={messages().player.coverAlt(track.album, track.artist)}
                   className="relative"

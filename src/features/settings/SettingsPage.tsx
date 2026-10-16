@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
-import mark from "@/assets/brand/mark.svg";
+import { BrandEmblem } from "@/components/ui/BrandEmblem";
 import { Page, PageHeader } from "@/components/layout/AppShell";
 import { Button, IconButton } from "@/components/ui/Button";
 import { Segmented, Switch } from "@/components/ui/Controls";
@@ -23,6 +23,8 @@ import { prefEnabled, setPreference, useUi } from "@/stores/ui";
 import { usePreferredLanguage, useT } from "@/i18n";
 import { ShortcutsTable } from "./ShortcutsDialog";
 import { UpdatesSection } from "./UpdatesSection";
+import { cn } from "@/utils/cn";
+import type { Preferences } from "@/types/domain";
 import { useUpdates } from "@/stores/updates";
 import { PlaybackOptions } from "@/features/sound/PlaybackOptions";
 import { OutputDevicePicker } from "@/features/sound/SoundDialog";
@@ -164,6 +166,7 @@ export function SettingsPage() {
         <Row label={t.settings.recordCovers}>
           {t.settings.recordCoversHint}
         </Row>
+        <AccentPicker />
         <div className="flex items-center justify-between gap-6 py-3">
           <div>
             <p className="text-body font-medium text-ink">{t.settings.motion}</p>
@@ -233,7 +236,7 @@ export function SettingsPage() {
 
       <Section title={t.settings.about}>
         <div className="flex items-center gap-4">
-          <img src={mark} alt="" className="size-12" />
+          <BrandEmblem size={52} />
           <div>
             <p className="caps glow text-[15px] tracking-[0.34em]">RYLORA</p>
             <p className="text-meta text-ink-3">
@@ -282,3 +285,52 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     </div>
   );
 }
+
+const ACCENT_SWATCHES: Record<NonNullable<Preferences["accentColor"]>, string> = {
+  silver: "linear-gradient(135deg, #f4f6f9, #aab1bd)",
+  gold: "linear-gradient(135deg, #f8e7c2, #b8955a)",
+  rose: "linear-gradient(135deg, #fbdde2, #c07f8c)",
+  cover: "conic-gradient(from 200deg, #7aa2ff, #f08bb0, #f5c76b, #6fd6b4, #7aa2ff)",
+};
+
+/** Accent colour as a row of glowing swatches (a radio group). */
+function AccentPicker() {
+  const t = useT();
+  const value = useUi((s) => s.prefs.accentColor ?? "silver");
+  const options = Object.keys(ACCENT_SWATCHES) as Array<keyof typeof ACCENT_SWATCHES>;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-6 py-3">
+      <div className="min-w-0">
+        <p className="text-body font-medium text-ink">{t.settings.accent}</p>
+        <p className="mt-0.5 text-meta text-ink-3">{t.settings.accentHint}</p>
+      </div>
+      <div role="radiogroup" aria-label={t.settings.accent} className="flex items-center gap-3">
+        {options.map((id) => {
+          const selected = value === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => void setPreference("accentColor", id)}
+              className="group flex flex-col items-center gap-1.5"
+            >
+              <span
+                className={cn(
+                  "block size-9 rounded-full ring-2 transition-[box-shadow,transform] duration-200 group-hover:scale-105",
+                  selected
+                    ? "ring-ink shadow-[0_0_14px_color-mix(in_srgb,var(--color-accent-soft)_70%,transparent)]"
+                    : "ring-transparent",
+                )}
+                style={{ background: ACCENT_SWATCHES[id] }}
+              />
+              <span className={cn("text-caption", selected ? "text-ink" : "text-ink-3")}>{t.settings.accents[id]}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

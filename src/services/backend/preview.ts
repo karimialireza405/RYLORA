@@ -297,7 +297,23 @@ export function createPreviewBackend(): Backend {
         changed();
       },
       setVisualizer: ok,
-      lyrics: async () => null,
+      // Original sample lines (not real lyrics) so the synced views can be designed here.
+      lyrics: async () => ({
+        synced: true,
+        source: "file" as const,
+        lines: [
+          "Low light over the harbour",
+          "نور کم روی بندر",
+          "Salt on the window",
+          "نمک روی پنجره",
+          "",
+          "Night tide is coming in",
+          "جزر و مد شب می‌آید",
+          "Hold the lantern still",
+          "تا صبح بمان",
+          "Until the morning",
+        ].map((text, i) => ({ timeMs: 4000 + i * 6000, text })),
+      }),
     },
     audio: {
       settings: async () => ({
@@ -398,6 +414,10 @@ export function createPreviewBackend(): Backend {
       pickArtwork: async () => { throw new Error("Choose cover images in the desktop app."); },
       confirm: async (message) => window.confirm(message),
       window: {
+        openMini: async () => {
+          throw new Error("The mini player opens in the desktop app.");
+        },
+        closeMini: ok,
         minimize: ok,
         toggleMaximize: ok,
         isMaximized: async () => false,

@@ -1,4 +1,4 @@
-import { Heart, ListMusic, Maximize2, MonitorPlay, SlidersVertical } from "lucide-react";
+import { Heart, ListMusic, Maximize2, MonitorPlay, PictureInPicture2, SlidersVertical } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { LibraryCover } from "@/components/ui/LibraryCover";
@@ -15,6 +15,8 @@ import { useUi } from "@/stores/ui";
 import { openSound, useAudio } from "@/stores/audio";
 import { cn } from "@/utils/cn";
 import { useT } from "@/i18n";
+import { backend } from "@/services/backend";
+import { notifyError } from "@/stores/toasts";
 
 /** Persistent transport bar. Lives outside page routing so it never unmounts. */
 export function PlaybackBar() {
@@ -149,6 +151,13 @@ export function PlaybackBar() {
           aria-expanded={queueOpen}
           aria-controls="queue-panel"
           onClick={() => useUi.setState({ queueOpen: !queueOpen })}
+        />
+        <IconButton
+          icon={PictureInPicture2}
+          label={t.mini.open}
+          size="sm"
+          disabled={!track}
+          onClick={() => void backend().system.window.openMini().catch((e: unknown) => notifyError(t.mini.failed, e))}
         />
         <IconButton
           icon={Maximize2}

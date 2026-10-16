@@ -47,6 +47,7 @@ export function shortcuts(t: Messages): Array<{ group: string; items: Array<[key
       group: s.immersiveGroup,
       items: [
         ["F", s.fullscreen],
+        ["L", s.karaoke],
         ["Esc", s.exit],
       ],
     },

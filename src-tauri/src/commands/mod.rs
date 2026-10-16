@@ -7,6 +7,7 @@ pub mod player;
 pub mod playlists;
 pub mod settings;
 pub mod updates;
+pub mod windows;
 
 use crate::application::library::LibraryService;
 use crate::application::player::PlayerHandle;
