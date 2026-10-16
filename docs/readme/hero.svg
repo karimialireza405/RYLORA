@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="520" viewBox="0 0 1440 520" role="img" aria-labelledby="title desc">
+  <title id="title">RYLORA — Feel Every Note.</title>
+  <desc id="desc">A graphite and silver record sleeve and vinyl. A personal record collection, beautifully played.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#191b21"/><stop offset="1" stop-color="#0b0c0f"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#969bbb" stop-opacity=".2"/><stop offset="1" stop-color="#969bbb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#f3f4f5"/><stop offset=".5" stop-color="#d4d8df"/><stop offset="1" stop-color="#9fa6b4"/></linearGradient>
+    <linearGradient id="art" x2="1" y2="1"><stop stop-color="#50566f"/><stop offset=".52" stop-color="#252938"/><stop offset="1" stop-color="#11131b"/></linearGradient>
+    <radialGradient id="vinyl"><stop stop-color="#30323a"/><stop offset=".25" stop-color="#15161b"/><stop offset=".7" stop-color="#25262c"/><stop offset="1" stop-color="#0d0e11"/></radialGradient>
+    <linearGradient id="line"><stop stop-color="#9ca6c0" stop-opacity="0"/><stop offset=".48" stop-color="#dce2f4" stop-opacity=".6"/><stop offset="1" stop-color="#9ca6c0" stop-opacity="0"/></linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+    <clipPath id="sleeve"><path d="M965 112H1197V209A28 28 0 0 0 1197 265V344H965Z"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="1438" height="518" rx="20" fill="url(#bg)" stroke="#30333d"/>
+  <ellipse cx="1130" cy="258" rx="340" ry="245" fill="url(#halo)"/>
+  <path d="M68 64H1372" stroke="#353943"/>
+  <g fill="#a6adbc" font-family="Segoe UI,Arial,sans-serif" font-size="11" letter-spacing="3"><text x="70" y="44">THE PERSONAL LISTENING EXPERIENCE</text><text x="1370" y="44" text-anchor="end">WINDOWS / 0.1.0</text></g>
+  <g transform="translate(71 105) scale(.59)">
+    <circle cx="42" cy="32" r="19" fill="#17191f" stroke="#aeb4bf" stroke-width="1.4"/>
+    <circle cx="42" cy="32" r="14.8" fill="none" stroke="#5a5f6a"/><circle cx="42" cy="32" r="10.5" fill="none" stroke="#5a5f6a"/>
+    <circle cx="42" cy="32" r="4.6" fill="#e8ebf0"/><path d="M6 13H42V24.5A7.5 7.5 0 0 0 42 39.5V51H6Z" fill="url(#paper)"/>
+  </g>
+  <text x="122" y="135" fill="#e5e8ef" font-family="Segoe UI,Arial,sans-serif" font-size="20" letter-spacing="8">RYLORA</text>
+  <text x="70" y="245" fill="#f0f0f4" font-family="Georgia,Times New Roman,serif" font-size="76" letter-spacing="-2">Feel Every Note.</text>
+  <g fill="#a7adbc" font-family="Segoe UI,Arial,sans-serif" font-size="19"><text x="73" y="293">A personal record collection, beautifully played.</text><text x="73" y="325">Native sound. Quiet detail. Entirely yours.</text></g>
+  <rect x="73" y="370" width="115" height="29" rx="14.5" fill="#242730" stroke="#414654"/><rect x="199" y="370" width="142" height="29" rx="14.5" fill="#242730" stroke="#414654"/><rect x="352" y="370" width="160" height="29" rx="14.5" fill="#242730" stroke="#414654"/>
+  <g font-family="Segoe UI,Arial,sans-serif" font-size="10" letter-spacing="1.5" fill="#d9dee9" text-anchor="middle"><text x="130" y="389">LOCAL FIRST</text><text x="270" y="389">RUST + TAURI</text><text x="432" y="389">PERSIAN / ENGLISH</text></g>
+  <ellipse cx="1128" cy="368" rx="202" ry="18" fill="#000" opacity=".6" filter="url(#shadow)"/>
+  <circle cx="1192" cy="237" r="126" fill="url(#vinyl)" stroke="#646b7a" stroke-width="1"/>
+  <g fill="none" stroke="#737985" opacity=".2"><circle cx="1192" cy="237" r="120"/><circle cx="1192" cy="237" r="114"/><circle cx="1192" cy="237" r="108"/><circle cx="1192" cy="237" r="102"/><circle cx="1192" cy="237" r="96"/><circle cx="1192" cy="237" r="90"/><circle cx="1192" cy="237" r="84"/><circle cx="1192" cy="237" r="78"/><circle cx="1192" cy="237" r="72"/><circle cx="1192" cy="237" r="66"/><circle cx="1192" cy="237" r="60"/><circle cx="1192" cy="237" r="54"/></g>
+  <circle cx="1192" cy="237" r="39" fill="#b5bdce"/><circle cx="1192" cy="237" r="6" fill="#13151c"/>
+  <path d="M965 112H1197V209A28 28 0 0 0 1197 265V344H965Z" fill="url(#paper)"/>
+  <g clip-path="url(#sleeve)"><rect x="974" y="121" width="214" height="214" fill="url(#art)"/><circle cx="1096" cy="193" r="91" fill="none" stroke="#dce0ed" stroke-width=".7" opacity=".26"/><circle cx="1041" cy="285" r="65" fill="none" stroke="#c8cedc" stroke-width=".7" opacity=".3"/><path d="M980 294L1184 159M979 307L1184 172M979 320L1184 185" stroke="#c3cadb" stroke-width=".5" opacity=".16"/><text x="989" y="144" fill="#dbe1ed" font-family="Segoe UI,Arial,sans-serif" font-size="8" letter-spacing="3">THE LISTENING ROOM</text><text x="989" y="322" fill="#dbe1ed" font-family="Georgia,serif" font-size="18">RYLORA / 001</text></g>
+  <path d="M70 447C190 447 238 425 336 441S470 464 564 441 678 434 769 447 897 435 970 443 1088 458 1175 440 1270 447 1370 446" fill="none" stroke="url(#line)" stroke-width="1.4"/>
+  <g fill="#b4bdcf" opacity=".45"><circle cx="929" cy="421" r="1"/><circle cx="1021" cy="407" r="1.5"/><circle cx="1253" cy="420" r="1"/><circle cx="1147" cy="451" r="1.4"/><circle cx="854" cy="455" r="1"/><circle cx="1314" cy="387" r="1.2"/></g>
+  <g font-family="Segoe UI,Arial,sans-serif" font-size="10" letter-spacing="2" fill="#7e8798"><text x="73" y="486">YOUR RECORDS. YOUR SPACE. YOUR SOUND.</text><text x="1370" y="486" text-anchor="end">DESIGNED FOR LISTENING</text></g>
+</svg>
