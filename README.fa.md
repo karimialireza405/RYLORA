@@ -6,7 +6,7 @@
 
 پخش بومی با Rust · رابط گرافیتی و نقره‌ای · فارسی و انگلیسی
 
-[**شروع استفاده**](#شروع-استفاده) &nbsp; · &nbsp; [**قابلیت‌ها**](#features) &nbsp; · &nbsp; [**معماری**](#معماری) &nbsp; · &nbsp; [**English**](README.md)
+[**دانلود نسخهٔ ویندوز**](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) &nbsp; · &nbsp; [**شروع استفاده**](#شروع-استفاده) &nbsp; · &nbsp; [**قابلیت‌ها**](#features) &nbsp; · &nbsp; [**معماری**](#معماری) &nbsp; · &nbsp; [**English**](README.md)
 
 <sub>نسخهٔ ۰.۱.۰ · دسکتاپ ویندوز · کتابخانهٔ محلی</sub>
 
@@ -46,6 +46,12 @@ RYLORA فایل‌های موسیقی روی کامپیوترت را به یک �
 فرمت‌های فعلی شامل **MP3، FLAC، WAV، Ogg Vorbis و AAC/M4A** هستند. Opus در نسخهٔ فعلی پشتیبانی نمی‌شود.
 
 ## شروع استفاده
+
+### نصب روی ویندوز
+
+فایل [**نصب RYLORA 0.1.0 برای ویندوز ۶۴بیتی (.exe)**](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/RYLORA_0.1.0_x64-setup.exe) در [صفحهٔ ریلیز](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) قرار دارد. فایل `SHA256SUMS.txt` نیز برای بررسی صحت دانلود همراه آن منتشر شده است. چون مخزن خصوصی است، دانلود به حساب گیت‌هاب دارای دسترسی نیاز دارد.
+
+این نسخه امضای Authenticode ندارد و ممکن است ویندوز ناشر آن را ناشناخته نمایش دهد. مراحل بعد برای اجرای برنامه از روی سورس هستند.
 
 ### پیش‌نیازهای ویندوز
 
@@ -184,3 +190,5 @@ npm run tauri -- build --bundles nsis
 ---
 
 <p align="center"><strong>RYLORA</strong><br /><sub>مجموعهٔ تو. فضای تو. صدای تو.</sub></p>
+
+<p align="center">طراحی و ساخت: <a href="https://github.com/karimialireza405"><strong>علیرضا کریمی</strong></a></p>

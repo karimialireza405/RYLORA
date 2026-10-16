@@ -6,7 +6,7 @@
 
 Native Rust playback · An artwork-led interface · Persian & English
 
-[**Get started**](#get-started) &nbsp; · &nbsp; [**The interface**](#the-interface) &nbsp; · &nbsp; [**Architecture**](#architecture) &nbsp; · &nbsp; [**فارسی**](README.fa.md)
+[**Download for Windows**](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) &nbsp; · &nbsp; [**Get started**](#get-started) &nbsp; · &nbsp; [**The interface**](#the-interface) &nbsp; · &nbsp; [**Architecture**](#architecture) &nbsp; · &nbsp; [**فارسی**](README.fa.md)
 
 <sub>WINDOWS DESKTOP &nbsp; / &nbsp; LOCAL LIBRARY &nbsp; / &nbsp; VERSION 0.1.0</sub>
 
@@ -69,6 +69,12 @@ The interface is backed by a real audio engine: gapless playback, loudness norma
 | AAC | `.m4a`, `.aac` | AAC audio, including M4A containers. |
 
 ## Get started
+
+### Install on Windows
+
+Download [**RYLORA 0.1.0 — Windows x64 installer (.exe)**](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/RYLORA_0.1.0_x64-setup.exe) from the [release page](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0). `SHA256SUMS.txt` is included with the release for download-integrity verification. Access requires a GitHub account with permission to this private repository.
+
+This build is not Authenticode-signed, so Windows may display an unrecognized-publisher warning. The following steps are for building and running the app from source.
 
 ### 1. Prepare Windows
 
@@ -297,5 +303,7 @@ No project-wide open-source license has been added. Dependencies retain their ow
 **RYLORA** &nbsp; / &nbsp; Feel Every Note.
 
 <sub>Your records. Your space. Your sound.</sub>
+
+**Created by [Alireza Karimi](https://github.com/karimialireza405)**
 
 </div>
