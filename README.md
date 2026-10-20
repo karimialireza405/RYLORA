@@ -1,88 +1,153 @@
 <div align="center">
 
-<img src="docs/readme/hero.svg" alt="RYLORA — Feel Every Note. A personal record collection, beautifully played." width="100%" />
+[![RYLORA — Feel Every Note.](docs/readme/hero-en-v2.png)](https://github.com/karimialireza405/RYLORA/releases/latest)
 
-**A desktop music player built around the music you own.**
+# Your music. Beautifully played.
 
-Native Rust playback · An artwork-led interface · Persian & English
+**RYLORA is a desktop listening room for the music you own.**
 
-[**Download for Windows**](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) &nbsp; · &nbsp; [**Get started**](#get-started) &nbsp; · &nbsp; [**The interface**](#the-interface) &nbsp; · &nbsp; [**Architecture**](#architecture) &nbsp; · &nbsp; [**فارسی**](README.fa.md)
+A record-inspired interface. A native Rust audio engine. A collection that stays yours.
 
-<sub>WINDOWS DESKTOP &nbsp; / &nbsp; LOCAL LIBRARY &nbsp; / &nbsp; VERSION 0.1.0</sub>
+[![Release v0.1.0](docs/readme/release.svg)](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) [![Windows x64](docs/readme/platform.svg)](https://github.com/karimialireza405/RYLORA/releases/latest) [![Rust and Tauri](docs/readme/engine.svg)](#native-where-it-matters) [![English and Persian](docs/readme/language.svg)](README.fa.md)
+
+**English** &nbsp; / &nbsp; [**فارسی**](README.fa.md)
+
+[![Download RYLORA for Windows](docs/readme/download-en.svg)](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/RYLORA_0.1.0_x64-setup.exe)
+
+[Release notes](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) &nbsp; · &nbsp; [Explore the interface](#a-listening-room-for-your-music) &nbsp; · &nbsp; [Run from source](#build-and-explore)
+
+<sub>Windows x64 · Local music library · No account required for listening</sub>
 
 </div>
 
 ---
 
-RYLORA turns a folder of music into a personal record collection. Browse sleeves and vinyl, return to an unfinished album, shape the sound, and let the artwork set the atmosphere. Your files stay on your computer; the listening experience works offline.
+## A listening room for your music
 
-The interface is backed by a real audio engine: gapless playback, loudness normalization, a ten-band equalizer, device switching, and a spectrum computed from the audio being played. React handles the presentation; Rust owns playback and the library.
+Some albums deserve more than a filename in a list. RYLORA turns your music folder into a record collection: sleeves you recognize, a place to pick up where you left off, and a player that takes its atmosphere from the cover on screen.
 
-## The interface
+Import your files, choose a record, and settle in. Listening works offline; your music stays on your computer.
 
-<img src="docs/readme/player-en.jpg" alt="Now Playing: die-cut record sleeve, vinyl, tonearm and animated seek control" width="100%" />
+![RYLORA Now Playing with a die-cut sleeve, vinyl record, tonearm, and playback controls](docs/readme/player-en.jpg)
 
-<p align="center"><sub>NOW PLAYING — a record sleeve, a moving tonearm, and room for the music.</sub></p>
+<p align="center"><sub>NOW PLAYING / A sleeve, a record, and room for the music.</sub></p>
 
-<table>
-<tr>
-<td width="50%"><img src="docs/readme/home-en.jpg" alt="Home with continue listening and recent listening history" width="100%" /></td>
-<td width="50%"><img src="docs/readme/library-en.jpg" alt="Album library with record sleeves, filtering and sorting" width="100%" /></td>
-</tr>
-<tr>
-<td><strong>A quieter home.</strong><br />Continue listening, revisit recent plays, and find the records you return to.</td>
-<td><strong>A collection with character.</strong><br />Albums, artists, playlists and search, with artwork at the centre.</td>
-</tr>
-</table>
+> **Gallery note:** these are screenshots of the implemented interface, captured from the development browser preview with a fictional catalogue. The preview does not play audio or produce real FFT data. Native playback and audio-reactive behavior require the desktop app. The hero is original brand artwork. [Image sources and generation prompts →](docs/readme/README.md)
 
-> **About these images:** captured from the current development browser preview with its fictional catalogue. They show the implemented interface, not a design mockup. The preview produces no audio or live FFT data; those require the native desktop app. [View the Persian interface →](docs/readme/home-fa.jpg)
-
-## Built for listening
+## Your collection. Your atmosphere.
 
 <table>
 <tr>
-<td width="33%" valign="top"><h3>01 / Your collection</h3>Import files or entire folders. Keep albums, artists, favourites, playlists and listening history together. Folder watching keeps the index current while the app is open.</td>
-<td width="33%" valign="top"><h3>02 / Your sound</h3>Gapless albums, optional crossfade, ReplayGain or on-device loudness analysis, a ten-band EQ, and a choice of output device.</td>
-<td width="33%" valign="top"><h3>03 / Your atmosphere</h3>Cover-derived colour, restrained glow, audio-reactive sleeve motion, a particle spectrum, synced lyrics and an immersive player.</td>
+<td width="50%"><img src="docs/readme/home-en.jpg" alt="Home: continue listening and recent records" width="100%" /></td>
+<td width="50%"><img src="docs/readme/library-en.jpg" alt="Albums: a local collection presented as record sleeves" width="100%" /></td>
+</tr>
+<tr>
+<td valign="top"><strong>A place to return to.</strong><br />Continue an album, revisit a recent listen, and keep favourite records close.</td>
+<td valign="top"><strong>A library with character.</strong><br />Browse albums and artists, build playlists, and find the next track without leaving your collection.</td>
 </tr>
 </table>
 
-| Area | What is implemented |
+<p align="center"><a href="docs/readme/home-fa.jpg">See the Persian interface →</a></p>
+
+## The details make the difference
+
+| For the collection | For the listening |
 | :--- | :--- |
-| **Playback** | Editable queue, shuffle, repeat, session resume, gapless transitions and playback error recovery. |
-| **Audio controls** | Ten-band EQ with presets and preamp; track/album loudness normalization; optional 1–12 second crossfade and silence skipping. |
-| **Local library** | Incremental background scanning, folder watching, missing-file tracking, persisted sorting, grid/list views and search across songs, albums, artists and playlists. |
-| **Artwork** | Embedded covers, local sidecar images, cached thumbnails, die-cut sleeves and vinyl. The active cover can colour the player and timeline. |
-| **Lyrics** | Local `.lrc`, embedded synchronized lyrics and plain text. Follow playback or click a synchronized line to seek. |
-| **Organization** | Favourites, editable playlists, album pins, recent plays and most-played records. |
-| **Desktop** | Native file/folder pickers, drag and drop, single instance, remembered window geometry, Windows media keys and media flyout, and an always-on-top mini player. |
-| **Language & interaction** | Persian by default, English on demand, RTL layout, Persian digits and Solar Hijri dates; keyboard navigation, visible focus and reduced-motion support. |
+| **Files and folders.** Import recursively, scan in the background, and watch folders while RYLORA is open. | **An uninterrupted album.** Gapless transitions, an editable queue, shuffle, repeat, and playback-session resume. |
+| **Artwork with presence.** Embedded covers and local sidecars become record sleeves, cached thumbnails, and the player's accent colours. | **Sound you can shape.** A ten-band EQ, presets, preamp, and remembered output-device selection. |
+| **A library that remembers.** Favourites, playlists, pinned albums, play counts, and recent listening history. | **A more consistent level.** Track/album loudness normalization using ReplayGain tags or local EBU R128 analysis. |
+| **Lyrics that follow along.** Local LRC, synchronized embedded lyrics, plain text, and click-to-seek for timed lines. | **Transitions on your terms.** Optional 1–12 second crossfade and silence skipping, with consecutive album tracks kept gapless by default. |
+| **Persian, thoughtfully supported.** RTL layout, Persian digits, Solar Hijri dates, and an English interface one setting away. | **A player with atmosphere.** A native 64-band spectrum, cover-driven colour and motion, an immersive view, and a mini player. |
 
-### Formats
+**Bring your files:** `MP3` · `FLAC` · `WAV` · `Ogg Vorbis` · `AAC / M4A`
 
-| Format | Typical extension | Notes |
-| :--- | :--- | :--- |
-| MP3 | `.mp3` | Lossy audio; encoder padding is handled for gapless playback. |
-| FLAC | `.flac` | Lossless audio and embedded metadata/artwork. |
-| WAV | `.wav` | PCM audio. |
-| Ogg Vorbis | `.ogg` | Vorbis decoding; Opus is not currently supported. |
-| AAC | `.m4a`, `.aac` | AAC audio, including M4A containers. |
+<details>
+<summary><strong>Desktop touches and keyboard controls</strong></summary>
 
-## Get started
+Native file/folder pickers, file drops, single-instance handling, remembered window geometry, Windows media keys and media flyout, an always-on-top mini player, visible keyboard focus, and reduced-motion support are implemented.
 
-### Install on Windows
+| Action | Shortcut |
+| :--- | :--- |
+| Play / pause | `Space` |
+| Next / previous | `Ctrl + → / ←` |
+| Seek | `Shift + → / ←` |
+| Volume | `Ctrl + ↑ / ↓` |
+| Add music | `Ctrl + O` |
+| Search | `Ctrl + K` or `/` |
+| Queue | `Q` |
+| Favourite | `Ctrl + L` |
+| Shuffle / repeat | `S` / `R` |
+| Immersive player | `F11` |
+| Settings | `Ctrl + ,` |
+| All shortcuts | `?` |
 
-Download [**RYLORA 0.1.0 — Windows x64 installer (.exe)**](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/RYLORA_0.1.0_x64-setup.exe) from the [release page](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0). `SHA256SUMS.txt` is included with the release for download-integrity verification. Access requires a GitHub account with permission to this private repository.
+Inside the immersive player, use `F` for fullscreen, `L` for lyrics, and `Esc` to leave. Windows media keys use the native media-session integration.
 
-This build is not Authenticode-signed, so Windows may display an unrecognized-publisher warning. The following steps are for building and running the app from source.
+</details>
 
-### 1. Prepare Windows
+## Your first listen
 
-Install **Node.js with npm**, **Rust with the MSVC toolchain**, **Visual Studio Build Tools with Desktop development with C++**, and **Microsoft Edge WebView2 Runtime**. Follow the [official Tauri Windows prerequisites](https://v2.tauri.app/start/prerequisites/#windows) for the native toolchain.
+1. **Install RYLORA.** Download the [Windows x64 installer](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/RYLORA_0.1.0_x64-setup.exe) and follow setup.
+2. **Bring your collection.** Choose **Add music**, press **Ctrl + O**, or drop files and folders into the window. Folder imports include subfolders.
+3. **Make it yours.** Select an album, choose your output device, adjust the EQ, or switch between Persian and English in Settings.
 
-Development has been exercised on Windows 11 with Node.js 24 and Rust 1.95. The Rust manifest declares a minimum version of 1.82; use a current stable MSVC toolchain to build the locked dependency set. Other operating systems are not currently validated targets.
+Importing adds to the library without interrupting playback. Choose **Play now** when you want to switch to a new selection.
 
-### 2. Run the desktop app
+| Download | Details |
+| :--- | :--- |
+| [**RYLORA 0.1.0 — installer**](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/RYLORA_0.1.0_x64-setup.exe) | Windows x64 · 5.71 MiB |
+| [**Release page**](https://github.com/karimialireza405/RYLORA/releases/tag/v0.1.0) | Published installer and release information |
+| [**SHA256SUMS.txt**](https://github.com/karimialireza405/RYLORA/releases/download/v0.1.0/SHA256SUMS.txt) | Download-integrity verification |
+
+**Installation note:** the installer is unsigned; Windows may show an unrecognized-publisher warning. Compare the download's SHA-256 with the checksum published in the same release. Windows 11 is the documented development and validation environment. Downloading from this public repository requires no repository invitation.
+
+```powershell
+Get-FileHash .\RYLORA_0.1.0_x64-setup.exe -Algorithm SHA256
+```
+
+## Native where it matters
+
+React presents the collection. Rust owns the listening. A dedicated playback actor serializes commands and keeps the queue, audio transitions, and playback clock outside the UI. SQLite persists your library and listening data.
+
+```mermaid
+flowchart LR
+    UI["React + TypeScript<br/>Interface & controls"] <--> IPC["Tauri 2<br/>Typed commands & events"]
+    IPC <--> Player["Rust<br/>Playback actor & audio engine"]
+    IPC <--> Library["Library service<br/>Tags, scanning & artwork"]
+    Library <--> DB[("SQLite<br/>Library & preferences")]
+    Player <--> DB
+    Files["Your local files"] --> Player
+    Files --> Library
+```
+
+<details>
+<summary><strong>Under the needle: audio, transitions, and visual response</strong></summary>
+
+- **Gapless:** the next track is prepared before a transition; decoder delay/padding is handled while output remains continuous. Optional crossfade uses an equal-power blend.
+- **Equalizer:** ten shelf/peaking bands at 31, 62, 125, 250, 500 Hz; 1, 2, 4, 8, and 16 kHz, plus preamp and presets.
+- **Normalization:** ReplayGain tags take priority; otherwise local EBU R128 analysis supplies loudness measurements. Quiet, Normal, and Loud target −23, −14, and −11 LUFS. Gain is ramped and bounded by sample peaks; there is no limiter or true-peak guarantee. Without album tags, album normalization uses a duration-weighted energy estimate.
+- **Output:** Windows shared-mode playback with device switching. Exclusive WASAPI and bit-perfect output are not implemented.
+- **Visuals:** native FFT data drives a 64-band spectrum and smoothed cover response. Artwork supplies colour. The seek ribbon is a reactive visual control, not a decoded whole-track waveform. Reduced-motion preferences are respected.
+- **Separation:** playback runs independently of React. A separate progress store receives approximately four updates per second; spectrum data travels outside React component state.
+
+Read the [architecture](docs/architecture/overview.md) for ownership, thread boundaries, DSP, and event flow.
+
+</details>
+
+<details>
+<summary><strong>A library that keeps its history</strong></summary>
+
+Canonical path keys preserve identity across rescans. SQLite uses WAL and versioned migrations; scans run in the background with a separate database connection. Missing files are marked rather than silently deleting listening history.
+
+Metadata edits are library-only by default. Explicit writes to music files use a verified sibling copy before replacing the original. Artwork prefers embedded images, then local sidecars such as `cover.jpg`, `folder.png`, `front.webp`, or an image with the song's filename. BLAKE3-addressed derivatives are cached at 640 and 192 pixels.
+
+Folder watching runs while the application is open; a later scan reconciles changes made while it was closed. Lyrics are local; there is no online lyrics provider.
+
+</details>
+
+## Build and explore
+
+The documented Windows toolchain uses **Node.js 24**, **Rust/MSVC**, **Visual Studio Build Tools with the C++ workload**, and **WebView2 Runtime**. The manifest declares Rust 1.82 as its minimum; the recorded development environment used Rust 1.95. See [development setup](docs/development/setup.md) for details.
 
 ```powershell
 git clone https://github.com/karimialireza405/RYLORA.git
@@ -91,219 +156,91 @@ npm ci
 npm run app:dev
 ```
 
-This repository is private; cloning requires access through your GitHub account. The development command starts Vite and opens the native Tauri window.
+| Task | Command |
+| :--- | :--- |
+| Type checks | `npm run typecheck` |
+| Frontend tests | `npm test` |
+| Rust tests | `cargo test --manifest-path src-tauri/Cargo.toml` |
+| Rust lint | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets` |
+| Frontend production build | `npm run build` |
+| Desktop installers | `npm run app:build` |
+| NSIS installer only | `npm run tauri -- build --bundles nsis` |
 
-### 3. Add your music
-
-Choose **Add music** in the sidebar, press **Ctrl + O**, or drop files/folders onto the window. Folder imports include subfolders. Importing keeps existing playback running; use **Play now** when you want to switch to the new selection.
-
-Embedded artwork takes priority. A local `cover.jpg`, `folder.png`, `front.webp`, or image sharing the song's filename can supply a missing cover. Choose **Settings → Language** to switch between Persian and English.
-
-<details>
-<summary><strong>Interface-only preview and a generated test library</strong></summary>
-
-For layout work without starting Rust:
-
-```powershell
-npm run dev
-```
-
-Open `http://localhost:1420`. This development-only backend supplies fictional tracks and deterministic artwork. **It does not decode or play audio, and it emits no real spectrum data.** Production builds exclude this backend and require the desktop shell.
-
-To exercise the native player with original synthesized test media:
-
-```powershell
-python scripts/generate-test-media.py test-media
-```
-
-The generator requires Python, NumPy, Pillow and FFmpeg. Import the resulting `test-media` folder into the desktop app. Generated media is ignored by Git.
-
-</details>
-
-## Architecture
-
-RYLORA is a **modular monolith**: a Tauri desktop shell hosts a React/WebView2 interface and a Rust backend. Typed commands carry user intent; events carry state back to the interface. SQLite is the durable source for the library, preferences and listening data.
-
-```mermaid
-flowchart TB
-    UI["React 19 · TypeScript<br/>Features, controls, canvas visuals"]
-    State["Zustand<br/>UI state + backend snapshots"]
-    IPC["Typed backend service<br/>Tauri commands / events"]
-    Player["Rust playback actor<br/>Queue, transitions, session state"]
-    Audio["Native audio engine<br/>Decode, DSP, output, FFT"]
-    Library["Library service<br/>Scan, watch, tags, artwork"]
-    DB[("SQLite · WAL<br/>Migrations + repositories")]
-    Disk["Local music files"]
-    UI <--> State
-    State <--> IPC
-    IPC <--> Player
-    Player --> Audio
-    IPC <--> Library
-    Library <--> DB
-    Player <--> DB
-    Disk --> Library
-    Disk --> Audio
-```
-
-| Layer | Responsibility | Principal tools |
-| :--- | :--- | :--- |
-| **Presentation** | Feature screens, record artwork, controls, motion and RTL layout | React, TypeScript, Tailwind CSS, Radix UI, Motion, Lucide |
-| **Frontend state** | Library snapshots, navigation, preferences and isolated playback progress | Zustand, TanStack Virtual |
-| **Desktop boundary** | Validated IPC, window lifecycle, local artwork protocol and native integration | Tauri 2, WebView2 |
-| **Playback** | Ordered commands, queue ownership, decoding, output and DSP | Rust, rodio, Symphonia, crossbeam-channel |
-| **Library & storage** | Metadata, cover extraction, incremental indexing and migrations | Lofty, image, BLAKE3, notify, rusqlite |
+Installer output is under `src-tauri/target/release/bundle/`. A frontend build does not establish playback compatibility with a real audio device. The [release guide](docs/development/releasing.md) covers packaging, code signing, and update manifests.
 
 <details>
-<summary><strong>Playback engineering: transitions, DSP and visual telemetry</strong></summary>
+<summary><strong>Interface preview, test media, and source map</strong></summary>
 
-**Ownership and timing.** A dedicated player actor serializes playback commands and owns the queue. Native rendering runs independently of React. A separate frontend progress store receives approximately four updates per second; spectrum data travels outside React component state so visual activity does not require rerendering the entire interface.
+`npm run dev` opens a development-only browser preview at `http://localhost:1420`. It supplies fictional tracks and deterministic artwork. **It does not decode audio, play sound, or generate real FFT data.** This preview backend is excluded from production builds.
 
-**Gapless playback.** The engine prepares the next track and retains a continuous output stream. It handles encoder delay/padding and repeat-one transitions. Optional crossfade uses an equal-power blend; consecutive album tracks retain gapless behaviour by default.
-
-**Equalization.** Ten RBJ shelf/peaking bands cover **31, 62, 125, 250, 500 Hz; 1, 2, 4, 8 and 16 kHz**, with presets and preamp control. Playback uses the Windows shared output path. Exclusive WASAPI and bit-perfect output are not implemented.
-
-**Loudness normalization.** ReplayGain metadata is preferred; otherwise background EBU R128 analysis measures local files. Quiet, Normal and Loud target **−23, −14 and −11 LUFS** respectively. Gain changes are ramped, and gain is bounded using sample peaks. There is no limiter or true-peak guarantee. Without album tags, album normalization uses a duration-weighted energy estimate rather than measuring the album as one continuous programme.
-
-**Visual response.** A native 64-band FFT derives spectrum data from decoded playback samples. Cover motion uses a smoothed audio response, while artwork supplies accent colours. The sleeve, tonearm, timeline and particle field share the player's visual language. Reduced-motion preferences are respected.
-
-**Device changes.** Output-device selection persists. System Default follows the Windows default device, and device changes/recovery preserve the playback position where possible.
-
-Read the [architecture document](docs/architecture/overview.md) for ownership rules, event boundaries and persistence details.
-
-</details>
-
-<details>
-<summary><strong>Library engineering: identity, metadata and artwork</strong></summary>
-
-- Canonical path keys keep track identity stable across rescans, preserving favourites, playlist membership and listening history.
-- Scanning runs in the background with a separate database connection. SQLite uses WAL and versioned migrations.
-- Recursive folder watching coalesces filesystem events before rescanning. Watching runs while the app is open; a later scan reconciles changes made while it was closed.
-- Missing files are marked as missing instead of silently deleting their history.
-- Metadata edits are library-only by default. Explicit file writes use a verified sibling copy before replacing the original.
-- Artwork prefers embedded images, then local sidecars. BLAKE3-addressed JPEG derivatives are cached at 640 and 192 pixels.
-- Local lyrics support synchronized timestamps and several text encodings. There is no online lyrics provider.
-
-</details>
-
-### Source map
+Generate original synthesized test media with `python scripts/generate-test-media.py test-media`. It needs Python, NumPy, Pillow, and FFmpeg; import the generated folder into the desktop app.
 
 ```text
 src/
-├── app/                 Application shell and startup
-├── components/          Shared UI, layout and feedback
-├── features/            Home, library, player, lyrics, settings and more
-├── i18n/                Typed English/Persian dictionaries
-├── services/backend/    Typed native boundary + development preview
-├── stores/              State snapshots and UI state
-└── assets/              Brand and local fonts
-src-tauri/
-├── src/
-│   ├── commands/        IPC adapters
-│   ├── application/     Player and library services
-│   ├── domain/          Models and queue rules
-│   ├── audio/           Decode, DSP, FFT and output
-│   ├── library/         Paths, scanning and watching
-│   ├── metadata/        Tags, covers and colour
-│   ├── database/        Repositories and persistence
-│   └── system/          Windows and artwork integration
-└── migrations/          Versioned database changes
-scripts/                 Test media, release and signing helpers
-docs/                    Architecture, design and development guides
+├── app/                 Application shell and routing
+├── features/            Library, player, settings, and other screens
+├── components/          Shared controls, covers, and visualizations
+├── services/backend/    Typed desktop interface and dev preview
+├── stores/              UI state and backend snapshots
+└── assets/              Brand and bundled fonts
+src-tauri/src/
+├── commands/            IPC adapters
+├── application/         Player and library services
+├── domain/              Models and queue rules
+├── audio/               Decode, DSP, FFT, and output
+├── library/             Paths, scanning, and watching
+├── metadata/            Tags, covers, and colour
+├── database/            Persistence and migrations
+└── system/              Windows and artwork integration
+scripts/                 Test media, releases, and signing
+docs/                    Architecture, design, and development
 ```
 
-## Development
+Native calls stay behind `src/services/backend`; playback ownership stays in Rust. Validate Persian, Latin, and mixed-script text when changing the UI.
 
-```powershell
-# Static checks and frontend tests
-npm run typecheck
-npm test
+</details>
 
-# Rust tests and linting
-cargo test --manifest-path src-tauri/Cargo.toml
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets
+## Your files stay yours
 
-# Production frontend bundle
-npm run build
-```
+Core listening needs no account, upload, or online music catalogue. There is no telemetry integration. Music remains in its original location; the library index, playlists, preferences, history, and artwork cache live in the application-data directory, normally `%APPDATA%\app.rylora.player\`.
 
-Tests cover focused units such as queue/state rules, persistence, scanning, audio settings and typography helpers. Native audio behaviour should also be checked in the desktop app with real media and the intended output device. A successful web build is not a substitute for that check.
+Network activity belongs to the update flow when configured and requested or enabled. **No hosted update endpoint is configured in the checked-in application; this release is installed and updated manually.**
 
-When changing the project, keep native calls behind `src/services/backend`, keep player ownership in Rust, and validate Persian-only, Latin-only and mixed-script text. Use the existing [design system](docs/design-system/overview.md) for controls, typography, motion and colour.
+## Read the liner notes
 
-## Build & release
-
-```powershell
-# Build the configured desktop installer targets
-npm run app:build
-
-# Or build only the Windows NSIS installer
-npm run tauri -- build --bundles nsis
-```
-
-Installer output is written under `src-tauri/target/release/bundle/`, with NSIS packages in `nsis/` and MSI packages in `msi/`. See the [Tauri Windows installer guide](https://v2.tauri.app/distribute/windows-installer/) for platform tooling.
-
-| Release capability | Current state |
+| Guide | What is inside |
 | :--- | :--- |
-| NSIS / MSI build configuration | Present, with a Windows signing hook. |
-| Signed updater verification | Implemented; checks are opt-in. |
-| Hosted update feed | **Not configured** in the checked-in Tauri configuration. |
-| Trusted Windows code signing | Requires a separately configured trusted certificate or signing service. |
-| Release automation | `scripts/release.ps1` prepares artifacts and metadata; publication is separate. |
+| [Architecture](docs/architecture/overview.md) | Playback ownership, threads, IPC, storage, and audio engineering |
+| [Design system](docs/design-system/overview.md) | Typography, surfaces, artwork, colour, motion, and interaction |
+| [Development setup](docs/development/setup.md) | Toolchain, local workflow, test media, and recorded checks |
+| [Releasing](docs/development/releasing.md) | Installers, signatures, updates, and distribution |
+| [Roadmap](docs/development/roadmap.md) | Implemented behavior, validation evidence, and remaining work |
 
-Follow the [release guide](docs/development/releasing.md) for signing, update manifests and hosting. Updater signatures and Windows Authenticode signatures serve different purposes; configuring one does not establish the other.
+<details>
+<summary><strong>Project scope, formats, and licensing</strong></summary>
 
-## Keyboard controls
+RYLORA 0.1.0 is an actively developed Windows desktop application. Streaming services, cloud sync, exclusive audio output, and a hosted update service are outside the current delivered configuration. Opus and chained Ogg streams that change sample rate mid-file are not supported.
 
-| Action | Shortcut | Action | Shortcut |
-| :--- | :--- | :--- | :--- |
-| Play / pause | `Space` | Add music | `Ctrl + O` |
-| Next / previous | `Ctrl + → / ←` | Search | `Ctrl + K` or `/` |
-| Seek | `Shift + → / ←` | Queue | `Q` |
-| Volume | `Ctrl + ↑ / ↓` | Favourite | `Ctrl + L` |
-| Shuffle / repeat | `S` / `R` | Immersive player | `F11` |
-| Settings | `Ctrl + ,` | All shortcuts | `?` |
+The source repository is public. **No project-wide open-source license has been added**; public visibility does not grant a redistribution license. Dependencies retain their own licenses. [Italiana](docs/design-system/Italiana-OFL.txt) and [Marcellus](docs/design-system/Marcellus-OFL.txt) include OFL notices; Vazirmatn has its upstream OFL license. Peyda is proprietary; its [bundled notice](src/assets/fonts/peyda/FontLicense.txt) describes licensing requirements for redistribution.
 
-In the immersive player, use `F` for fullscreen, `L` for lyrics and `Esc` to leave. These are application shortcuts; Windows media keys are handled through the native media-session integration.
+Gallery captures and brand artwork are documented in [README assets](docs/readme/README.md). The banners are illustrative and do not depict a hardware product included with RYLORA.
 
-## Local data & privacy
-
-Music remains in its original location. RYLORA stores its index, preferences and listening data under the Windows application-data directory, normally:
-
-```text
-%APPDATA%\app.rylora.player\
-├── rylora.db       Library, playlists, preferences and history
-└── …               Cached artwork and application data
-```
-
-Core listening needs no account, music upload or online catalogue. There is no telemetry integration. Network activity is limited to the update flow when an endpoint is configured and the user enables or requests a check. Metadata changes stay in the library unless file writing is explicitly selected.
-
-## Documentation
-
-| Read next | Contents |
-| :--- | :--- |
-| [Architecture](docs/architecture/overview.md) | State ownership, thread boundaries, IPC and persistence |
-| [Design system](docs/design-system/overview.md) | Typography, colour, components, artwork and motion |
-| [Development setup](docs/development/setup.md) | Toolchain and local workflow |
-| [Release guide](docs/development/releasing.md) | Installers, signatures, update feeds and distribution |
-| [Roadmap](docs/development/roadmap.md) | Implemented work, remaining scope and validation notes |
-| [راهنمای فارسی](README.fa.md) | معرفی، نصب، معماری و راهنمای استفاده به فارسی |
-
-## Status & licensing
-
-**RYLORA 0.1.0 is an actively developed Windows desktop application in a private repository.** Streaming services, cloud sync, exclusive WASAPI output and a hosted update service are outside the current delivered configuration. Check the [roadmap](docs/development/roadmap.md) before treating planned work as available.
-
-No project-wide open-source license has been added. Dependencies retain their own licenses. Italiana and Marcellus ship with [their](docs/design-system/Italiana-OFL.txt) [OFL notices](docs/design-system/Marcellus-OFL.txt); Vazirmatn has its upstream license. Peyda is proprietary: review its [bundled license notice](src/assets/fonts/peyda/FontLicense.txt) and distribution rights before redistributing the font.
+</details>
 
 ---
 
 <div align="center">
 
-<img src="src/assets/brand/mark.svg" alt="RYLORA record sleeve mark" width="40" />
+<img src="src/assets/brand/mark.svg" width="52" alt="RYLORA record sleeve mark" />
 
-**RYLORA** &nbsp; / &nbsp; Feel Every Note.
+### RYLORA
+
+*Feel Every Note.*
+
+**Designed & developed by [Alireza Karimi](https://github.com/karimialireza405)**
 
 <sub>Your records. Your space. Your sound.</sub>
 
-**Created by [Alireza Karimi](https://github.com/karimialireza405)**
+[Download RYLORA](https://github.com/karimialireza405/RYLORA/releases/latest) &nbsp; · &nbsp; [فارسی](README.fa.md) &nbsp; · &nbsp; [GitHub](https://github.com/karimialireza405)
 
 </div>
